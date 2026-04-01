@@ -465,7 +465,13 @@ function PhoneScreen({ onSubmit }) {
   return (
     <div className="phone-screen">
       <div className="phone-card">
-        <div className="phone-card-icon">👋</div>
+        <div className="phone-card-icon">
+          <img
+            src="https://res.cloudinary.com/dc9lx1ruu/image/upload/v1775076708/1200x630wa_-_copia-removebg-preview_my7zpm.png"
+            alt="Zubale"
+            style={{ width: "64px", height: "64px", objectFit: "contain" }}
+          />
+        </div>
         <h1 className="phone-card-title">Ingresá tu número de teléfono</h1>
         <p className="phone-card-sub">
           Te mostraremos las salas disponibles para tu perfil hoy
@@ -518,6 +524,23 @@ function NotFoundScreen({ digits, onRetry }) {
           Contactá a tu coordinador para que te agregue al sistema.
         </p>
         <button className="btn-primary" onClick={onRetry}>Volver a intentar</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Usuario bloqueado (Tarjeta Negra / Roja) ── */
+function BlockedScreen({ onRetry }) {
+  return (
+    <div className="fullscreen-center">
+      <div className="status-card">
+        <div className="status-icon">🚫</div>
+        <div className="status-title">Sin citas disponibles</div>
+        <p className="status-text">
+          Lamentablemente no tenemos citas disponibles para ti.<br/><br/>
+          Vuelve a intentarlo en un futuro.
+        </p>
+        <button className="btn-primary" onClick={onRetry}>Volver</button>
       </div>
     </div>
   );
@@ -679,6 +702,8 @@ function App() {
       if (userRes.status === "ok") {
         setUserInfo({ rol: userRes.rol, cliente: userRes.cliente });
         setPhase("results");
+      } else if (userRes.status === "blocked") {
+        setPhase("blocked");
       } else if (userRes.status === "not_found") {
         setPhase("not_found");
       } else {
@@ -721,6 +746,7 @@ function App() {
 
       {phase === "phone"     && <PhoneScreen onSubmit={handlePhoneSubmit} />}
       {phase === "loading"   && <LoadingScreen />}
+      {phase === "blocked"   && <BlockedScreen onRetry={handleRetry} />}
       {phase === "not_found" && <NotFoundScreen digits={digits} onRetry={handleRetry} />}
       {phase === "error"     && <ErrorScreen onRetry={handleRetry} />}
 

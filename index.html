@@ -407,17 +407,7 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbzqHnM4KVPz9tBJnsMLWrEx
 
 const ROLE_EMOJI = { Picker: "🛒", Shopper: "🛍️", Driver: "🚙" };
 
-/* ── Pre-fetch silencioso de locales mientras el usuario tipea ── */
-let _storesCache  = null;
-let _storesFetch  = null;
-function prefetchStores() {
-  if (_storesFetch) return;
-  _storesFetch = fetch(GAS_URL + "?action=getLocales")
-    .then(r => r.json())
-    .then(data => { if (data.status === "ok") _storesCache = data.locales; return data; })
-    .catch(() => null);
-}
-prefetchStores(); // arranca apenas carga la página
+/* ── Sin pre-fetch separado: todo en una sola llamada getUserAndStores ── */
 
 /* ══════════════════════════════════════════════════════════
    COMPONENTES
@@ -452,7 +442,12 @@ function PhoneScreen({ onSubmit }) {
   useEffect(() => { inputRef.current?.focus(); }, []);
 
   const handleChange = (e) => {
-    setDigits(e.target.value.replace(/\D/g, "").slice(0, 8));
+    const val = e.target.value.replace(/\D/g, "").slice(0, 8);
+    setDigits(val);
+    // Auto-submit al completar 8 dígitos
+    if (val.length === 8) {
+      setTimeout(() => onSubmit(val), 80);
+    }
   };
 
   const handleSubmit = async () => {
@@ -681,7 +676,7 @@ function App() {
   const [phase, setPhase]         = useState("phone");
   const [digits, setDigits]       = useState(""); // 8 dígitos ingresados
   const [userInfo, setUserInfo]   = useState(null); // { rol, cliente }
-  const [allStores, setAllStores] = useState(_storesCache);
+  const [myStores, setMyStores]   = useState([]);
   const [selected, setSelected]   = useState(null);
   const [toast, setToast]         = useState(null);
 
@@ -690,21 +685,19 @@ function App() {
     setPhase("loading");
 
     try {
-      // Corre checkUser y pre-fetch de locales en paralelo para mayor velocidad
-      const [userRes] = await Promise.all([
-        fetch(GAS_URL + "?action=checkUser&phone=569" + phoneDigits).then(r => r.json()),
-        _storesFetch // espera si aún está cargando
-      ]);
+      // Una sola llamada que devuelve usuario + locales filtrados juntos
+      const res = await fetch(GAS_URL + "?action=getUserAndStores&phone=569" + phoneDigits)
+        .then(r => r.json());
 
-      // Actualizar stores desde caché
-      if (_storesCache) setAllStores(_storesCache);
-
-      if (userRes.status === "ok") {
-        setUserInfo({ rol: userRes.rol, cliente: userRes.cliente });
+      if (res.status === "ok") {
+        setUserInfo({ rol: res.rol, cliente: res.cliente });
+        setMyStores((res.stores || []).map((name, i) => ({
+          id: i, name, emoji: ROLE_EMOJI[res.rol] || "🏪"
+        })));
         setPhase("results");
-      } else if (userRes.status === "blocked") {
+      } else if (res.status === "blocked") {
         setPhase("blocked");
-      } else if (userRes.status === "not_found") {
+      } else if (res.status === "not_found") {
         setPhase("not_found");
       } else {
         setPhase("error");
@@ -713,20 +706,6 @@ function App() {
       setPhase("error");
     }
   };
-
-  // Filtrar locales por rol y cliente del usuario
-  const myStores = useMemo(() => {
-    if (!allStores || !userInfo) return [];
-    const byRol     = allStores[userInfo.rol]             || {};
-    const byCliente = byRol[userInfo.cliente];
-    if (!byCliente) return [];
-    const names = Array.isArray(byCliente) ? byCliente : Object.keys(byCliente);
-    return names.map((name, i) => ({
-      id: i,
-      name,
-      emoji: ROLE_EMOJI[userInfo.rol] || "🏪"
-    }));
-  }, [allStores, userInfo]);
 
   const handleConfirm = (store) => {
     setSelected(null);
@@ -758,38 +737,34 @@ function App() {
           </section>
 
           <main className="main">
-            {!allStores ? (
-              <SkeletonGrid />
-            ) : (
-              <>
-                <div style={{ display:"flex", alignItems:"center", marginBottom:4 }}>
-                  <span className="section-title">Locales disponibles</span>
-                  <span className="pill-count">📍 {myStores.length} {myStores.length === 1 ? "local" : "locales"}</span>
-                </div>
-                <p className="section-sub">Seleccioná el local donde querés asistir hoy.</p>
+            <>
+              <div style={{ display:"flex", alignItems:"center", marginBottom:4 }}>
+                <span className="section-title">Locales disponibles</span>
+                <span className="pill-count">📍 {myStores.length} {myStores.length === 1 ? "local" : "locales"}</span>
+              </div>
+              <p className="section-sub">Seleccioná el local donde querés asistir hoy.</p>
 
-                {myStores.length > 0 ? (
-                  <div className="cards-grid">
-                    {myStores.map(store => (
-                      <StoreCard key={store.id} store={store} onSelect={setSelected} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="empty">
-                    <div className="empty-icon">🔍</div>
-                    <div className="empty-title">Sin locales disponibles hoy</div>
-                    <div className="empty-text">No hay salas asignadas para {userInfo?.rol} en {userInfo?.cliente} hoy. Volvé más tarde.</div>
-                  </div>
-                )}
-
-                <div className="warn-box" style={{ marginTop: 28 }}>
-                  <span className="warn-box-icon">⚠️</span>
-                  <span className="warn-box-text">
-                    Recuerda que es importante que para seleccionar una sala, te encuentres previamente <strong>capacitado</strong>.
-                  </span>
+              {myStores.length > 0 ? (
+                <div className="cards-grid">
+                  {myStores.map(store => (
+                    <StoreCard key={store.id} store={store} onSelect={setSelected} />
+                  ))}
                 </div>
-              </>
-            )}
+              ) : (
+                <div className="empty">
+                  <div className="empty-icon">🔍</div>
+                  <div className="empty-title">Sin locales disponibles hoy</div>
+                  <div className="empty-text">No hay salas asignadas para {userInfo?.rol} en {userInfo?.cliente} hoy. Volvé más tarde.</div>
+                </div>
+              )}
+
+              <div className="warn-box" style={{ marginTop: 28 }}>
+                <span className="warn-box-icon">⚠️</span>
+                <span className="warn-box-text">
+                  Recuerda que es importante que para seleccionar una sala, te encuentres previamente <strong>capacitado</strong>.
+                </span>
+              </div>
+            </>
           </main>
 
           <footer className="footer">© 2025 Zubale</footer>

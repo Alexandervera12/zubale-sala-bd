@@ -767,17 +767,16 @@ function App() {
       {phase === "results" && (
         <>
           <section className="hero">
-            <h1>Salas disponibles para vos hoy</h1>
-            <p>Como <strong>{userInfo?.rol}</strong> en <strong>{userInfo?.cliente}</strong>, estas son tus opciones para hoy.</p>
+            <h1>Salas disponibles para ti hoy</h1>
+            <p>Como <strong>{userInfo?.rol}</strong> en <strong>{userInfo?.cliente}</strong>, estas son tus opciones.</p>
           </section>
 
           <main className="main">
             <>
               <div style={{ display:"flex", alignItems:"center", marginBottom:4 }}>
                 <span className="section-title">Locales disponibles</span>
-                <span className="pill-count">📍 {myStores.length} {myStores.length === 1 ? "local" : "locales"}</span>
               </div>
-              <p className="section-sub">Seleccioná el local donde querés asistir hoy.</p>
+              <p className="section-sub">Selecciona el local donde quieres asistir hoy.</p>
 
               {myStores.length > 0 ? (
                 <div className="cards-grid">

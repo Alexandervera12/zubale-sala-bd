@@ -494,14 +494,49 @@ function PhoneScreen({ onSubmit }) {
   );
 }
 
-/* ── Pantalla de carga ── */
+/* ── Pantalla de carga con barra de progreso ── */
 function LoadingScreen() {
+  const [pct, setPct] = useState(0);
+
+  useEffect(() => {
+    // Sube rápido al principio, se frena al acercarse a 90%
+    const interval = setInterval(() => {
+      setPct(prev => {
+        if (prev >= 90) { clearInterval(interval); return prev; }
+        const step = prev < 40 ? 8 : prev < 70 ? 4 : 1;
+        return Math.min(prev + step, 90);
+      });
+    }, 120);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="fullscreen-center">
       <div className="status-card">
-        <div className="spinner" />
-        <div className="status-title">Buscando tu perfil...</div>
-        <p className="status-text">Estamos verificando tu número y cargando las salas disponibles.</p>
+        <div style={{ fontSize: 40, marginBottom: 16 }}>🔍</div>
+        <div className="status-title" style={{ marginBottom: 6 }}>Buscando tu perfil...</div>
+        <p className="status-text" style={{ marginBottom: 20 }}>
+          Verificando tu número y cargando las salas disponibles.
+        </p>
+
+        {/* Barra de progreso */}
+        <div style={{
+          width: "100%",
+          background: "#E5E7EB",
+          borderRadius: 99,
+          height: 10,
+          overflow: "hidden",
+          marginBottom: 10
+        }}>
+          <div style={{
+            height: "100%",
+            width: pct + "%",
+            background: "linear-gradient(90deg, #1557D6, #1B4FFF)",
+            borderRadius: 99,
+            transition: "width 0.15s ease"
+          }} />
+        </div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#1557D6" }}>{pct}%</div>
       </div>
     </div>
   );

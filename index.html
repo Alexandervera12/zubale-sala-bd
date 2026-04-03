@@ -550,8 +550,8 @@ function NotFoundScreen({ digits, onRetry }) {
         <div className="status-icon">🔍</div>
         <div className="status-title">Número no registrado</div>
         <p className="status-text">
-          El teléfono <strong style={{ color: "#1A2340" }}>569{digits}</strong> no está en nuestra base de datos.<br/><br/>
-          Verifica que el número ingresado esté correcto. Si crees que es un error contactate con el coordinador de sala
+          El número <strong style={{ color: "#1A2340" }}>569{digits}</strong> no fue encontrado.<br/><br/>
+          Verifica que el número ingresado esté correcto.
         </p>
         <button className="btn-primary" onClick={onRetry}>Volver a intentar</button>
       </div>

@@ -649,7 +649,7 @@ function Modal({ store, userInfo, digits, onClose, onSubmit }) {
           <div className="warn-box" style={{ marginBottom: 0 }}>
             <span className="warn-box-icon">⚠️</span>
             <span className="warn-box-text">
-              Al confirmar quedará registrada tu asistencia de hoy en <strong>{store.name}</strong>. Asegurate de poder asistir.
+              Al confirmar quedará registrada tu disponibilidad de hoy en <strong>{store.name}</strong>. Asegurate de poder asistir.
             </span>
           </div>
 
@@ -673,9 +673,9 @@ function Toast({ store }) {
   return (
     <div className="toast">
       <div className="toast-icon">🎉</div>
-      <div className="toast-title">¡Ya estás agendado!</div>
+      <div className="toast-title">¡Tu Registro Fue enviado!</div>
       <div className="toast-msg">
-        Tu asistencia en <strong>{store.name}</strong> quedó registrada. Se verá reflejado durante el día en tu app Zubale.
+        Tu disponibilidad de asistencia en <strong>{store.name}</strong> quedó registrada. Preparate para asistir! Recibirás confirmación previamente por whatsapp.
       </div>
     </div>
   );

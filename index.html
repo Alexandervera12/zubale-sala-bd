@@ -548,7 +548,7 @@ function NotFoundScreen({ digits, onRetry }) {
     <div className="fullscreen-center">
       <div className="status-card">
         <div className="status-icon">🔍</div>
-        <div className="status-title">Número no registrado</div>
+        <div className="status-title">Número no encontrado</div>
         <p className="status-text">
           El número <strong style={{ color: "#1A2340" }}>569{digits}</strong> no fue encontrado.<br/><br/>
           Verifica que el número ingresado esté correcto.
@@ -788,7 +788,7 @@ function App() {
                 <div className="empty">
                   <div className="empty-icon">🔍</div>
                   <div className="empty-title">Sin locales disponibles hoy</div>
-                  <div className="empty-text">No hay salas asignadas para {userInfo?.rol} en {userInfo?.cliente} hoy. Volvé más tarde.</div>
+                  <div className="empty-text">No hay salas asignadas para {userInfo?.rol} en {userInfo?.cliente} hoy. Vuelve más tarde.</div>
                 </div>
               )}
 

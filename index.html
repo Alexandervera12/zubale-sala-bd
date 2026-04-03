@@ -423,12 +423,6 @@ function Header({ userInfo }) {
           style={{ height: "32px", width: "auto" }}
         />
       </div>
-      {userInfo && (
-        <div className="user-badge">
-          <span>{ROLE_EMOJI[userInfo.rol] || "👤"}</span>
-          <span>{userInfo.rol} · {userInfo.cliente}</span>
-        </div>
-      )}
     </header>
   );
 }

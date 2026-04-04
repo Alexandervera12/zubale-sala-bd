@@ -613,7 +613,7 @@ function Modal({ store, userInfo, digits, onClose, onSubmit }) {
       await fetch(GAS_URL, {
         method: "POST",
         mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "text/plain" },
         body: JSON.stringify({
           local:    store.name,
           telefono: "569" + digits,
@@ -675,6 +675,22 @@ function Toast({ store }) {
   );
 }
 
+/* ── Ya registrado hoy ── */
+function AlreadyRegisteredScreen({ onRetry }) {
+  return (
+    <section className="hero" style={{ textAlign:"center", padding:"48px 24px" }}>
+      <div style={{ fontSize:64, marginBottom:16 }}>✅</div>
+      <h2 style={{ margin:"0 0 8px" }}>Ya registraste hoy</h2>
+      <p style={{ color:"#6b7280", marginBottom:28 }}>
+        Tu disponibilidad ya fue enviada para hoy. No es necesario registrarte de nuevo.
+      </p>
+      <button className="btn-secondary" onClick={onRetry} style={{ maxWidth:260 }}>
+        Volver al inicio
+      </button>
+    </section>
+  );
+}
+
 /* ── Skeleton de carga ── */
 function SkeletonGrid() {
   return (
@@ -701,7 +717,7 @@ function SkeletonGrid() {
    APP PRINCIPAL
    ══════════════════════════════════════════════════════════ */
 function App() {
-  // "phone" | "loading" | "results" | "not_found" | "error"
+  // "phone" | "loading" | "results" | "already_registered" | "blocked" | "not_found" | "error"
   const [phase, setPhase]         = useState("phone");
   const [digits, setDigits]       = useState(""); // 8 dígitos ingresados
   const [userInfo, setUserInfo]   = useState(null); // { rol, cliente }
@@ -720,6 +736,10 @@ function App() {
 
       if (res.status === "ok") {
         setUserInfo({ rol: res.rol, cliente: res.cliente });
+        if (res.yaRegistrado) {
+          setPhase("already_registered");
+          return;
+        }
         setMyStores((res.stores || []).map((name, i) => ({
           id: i, name, emoji: ROLE_EMOJI[res.rol] || "🏪"
         })));
@@ -739,7 +759,8 @@ function App() {
   const handleConfirm = (store) => {
     setSelected(null);
     setToast(store);
-    setTimeout(() => setToast(null), 10000);
+    setTimeout(() => setToast(null), 4500);
+    setTimeout(() => setPhase("already_registered"), 5000);
   };
 
   const handleRetry = () => {
@@ -754,7 +775,8 @@ function App() {
 
       {phase === "phone"     && <PhoneScreen onSubmit={handlePhoneSubmit} />}
       {phase === "loading"   && <LoadingScreen />}
-      {phase === "blocked"   && <BlockedScreen onRetry={handleRetry} />}
+      {phase === "blocked"          && <BlockedScreen onRetry={handleRetry} />}
+      {phase === "already_registered" && <AlreadyRegisteredScreen onRetry={handleRetry} />}
       {phase === "not_found" && <NotFoundScreen digits={digits} onRetry={handleRetry} />}
       {phase === "error"     && <ErrorScreen onRetry={handleRetry} />}
 

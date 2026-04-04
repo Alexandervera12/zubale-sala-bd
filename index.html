@@ -680,7 +680,7 @@ function AlreadyRegisteredScreen({ onRetry }) {
   return (
     <section className="hero" style={{ textAlign:"center", padding:"48px 24px" }}>
       <div style={{ fontSize:64, marginBottom:16 }}>✅</div>
-      <h2 style={{ margin:"0 0 8px" }}>Ya tenemos tu registrasto</h2>
+      <h2 style={{ margin:"0 0 8px" }}>Ya tenemos tu registro</h2>
       <p style={{ color:"#FFFFFF", marginBottom:28 }}>
         Tu disponibilidad ya fue enviada para hoy. Preparate para asistir a sala, te confirmaremos por whatsapp la asistencia.
       </p>
@@ -759,8 +759,8 @@ function App() {
   const handleConfirm = (store) => {
     setSelected(null);
     setToast(store);
-    setTimeout(() => setToast(null), 4500);
-    setTimeout(() => setPhase("already_registered"), 10000);
+    setTimeout(() => setToast(null), 10500);
+    setTimeout(() => setPhase("already_registered"), 5000);
   };
 
   const handleRetry = () => {

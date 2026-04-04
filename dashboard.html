@@ -206,7 +206,7 @@ const { useState, useEffect, useMemo, useCallback, useRef } = React;
 /* ══════════════════════════════════════════════════════
    ⚠️  REEMPLAZA CON TU URL DEL GAS
    ══════════════════════════════════════════════════════ */
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzqHnM4KVPz9tBJnsMLWrExjWydyOZ4Mcix4qAVFZ0B7-AjLzFYtP4vNKJtlKi3iqY/exec";
+const GAS_URL = "TU_GAS_URL_AQUI";
 
 const PAGE_SIZE = 10;
 
@@ -402,10 +402,6 @@ function SolicitudesTab({ fecha, autoRefresh }) {
           <option value="">Brand ▾</option>
           {brands.map(b=><option key={b} value={b}>{b}</option>)}
         </select>
-        <div className="filter-date">
-          <span>📅</span>
-          <input type="date" value={fecha} readOnly style={{cursor:"default"}} />
-        </div>
         <button className="icon-btn" onClick={()=>{setL(true);load();}} title="Actualizar">↺</button>
       </div>
       <DataTable columns={cols} rows={filtered} loading={loading} />
@@ -437,7 +433,6 @@ function ReposicionTab({ fecha, autoRefresh }) {
   const fechaDMY = isoToDMY(fecha);
   const brands   = useMemo(() => [...new Set(all.map(r=>r.brand).filter(Boolean))].sort(), [all]);
   const filtered = useMemo(() => all.filter(r => {
-    if (!r.estado) return false;
     if (fecha && r.fecha !== fechaDMY) return false;
     if (srchLocal && !r.local.toLowerCase().includes(srchLocal.toLowerCase())) return false;
     if (fBrand && r.brand !== fBrand) return false;
@@ -475,10 +470,6 @@ function ReposicionTab({ fecha, autoRefresh }) {
           <option value="">Brand ▾</option>
           {brands.map(b=><option key={b} value={b}>{b}</option>)}
         </select>
-        <div className="filter-date">
-          <span>📅</span>
-          <input type="date" value={fecha} readOnly style={{cursor:"default"}} />
-        </div>
         <button className="icon-btn" onClick={()=>{setL(true);load();}} title="Actualizar">↺</button>
       </div>
       <DataTable columns={cols} rows={filtered} loading={loading} />

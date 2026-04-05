@@ -495,20 +495,30 @@ function ReposicionTab({ fecha, autoRefresh }) {
 }
 
 /* ════════════ AVANCE ════════════ */
-function AvanceTab({ fecha, autoRefresh }) {
-  const [all, setAll]     = useState([]);
-  const [loading, setL]   = useState(true);
-  const [srchSala, setSS] = useState("");
-  const [fBrand, setFB]   = useState("");
-  const [fRol, setFR]     = useState("");
-  const timerRef          = useRef(null);
+function AvanceTab({ autoRefresh }) {
+  const [all, setAll]           = useState([]);
+  const [agendados, setAg]      = useState([]);
+  const [loading, setL]         = useState(true);
+  const [srchLocal, setSL]      = useState("");
+  const [fBrand, setFB]         = useState("");
+  const [fRol, setFR]           = useState("");
+  const timerRef                = useRef(null);
 
   const load = useCallback((force = false) => {
-    if (!force && _cache.avance) { setAll(_cache.avance); setL(false); return; }
+    const loadAvance = (!force && _cache.avance)
+      ? Promise.resolve(_cache.avance)
+      : fetch(`${GAS_URL}?action=getAvance`).then(r=>r.json())
+          .then(res=>{ _cache.avance = res.data||[]; return _cache.avance; });
+
+    const loadAgendados = (!force && _cache.agendados)
+      ? Promise.resolve(_cache.agendados)
+      : fetch(`${GAS_URL}?action=getAgendados`).then(r=>r.json())
+          .then(res=>{ _cache.agendados = res.data||[]; return _cache.agendados; });
+
     setL(true);
-    fetch(`${GAS_URL}?action=getAvance`).then(r=>r.json())
-      .then(res=>{ _cache.avance = res.data||[]; setAll(_cache.avance); setL(false); })
-      .catch(()=>setL(false));
+    Promise.all([loadAvance, loadAgendados])
+      .then(([av, ag]) => { setAll(av); setAg(ag); setL(false); })
+      .catch(() => setL(false));
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -519,38 +529,48 @@ function AvanceTab({ fecha, autoRefresh }) {
     return () => clearInterval(timerRef.current);
   }, [autoRefresh, load]);
 
-  const fechaDMY = isoToDMY(fecha);
   const brands   = useMemo(() => [...new Set(all.map(r=>r.brand).filter(Boolean))].sort(), [all]);
   const roles    = useMemo(() => [...new Set(all.map(r=>r.rol).filter(Boolean))].sort(), [all]);
   const filtered = useMemo(() => all.filter(r => {
-    if (fecha && r.fecha !== fechaDMY) return false;
-    if (srchSala && !r.sala.toLowerCase().includes(srchSala.toLowerCase())) return false;
+    if (srchLocal && !r.local.toLowerCase().includes(srchLocal.toLowerCase())) return false;
     if (fBrand && r.brand !== fBrand) return false;
     if (fRol && r.rol !== fRol) return false;
     return true;
-  }), [all, fecha, fechaDMY, srchSala, fBrand, fRol]);
+  }), [all, srchLocal, fBrand, fRol]);
+
+  // Contar usuarios únicos (por teléfono) en Reposición que coincidan brand+local+rol
+  const countAgendados = (row) => {
+    const matches = agendados.filter(a =>
+      a.brand === row.brand && a.local === row.local && a.rol === row.rol
+    );
+    return new Set(matches.map(a => a.telefono)).size;
+  };
 
   const cols = [
-    { key:"fecha",          label:"Fecha" },
-    { key:"brand",          label:"Brand",               render: v => <span className="badge badge-brand">{v}</span> },
-    { key:"sala",           label:"Sala" },
+    { key:"brand",          label:"Brand",                render: v => <span className="badge badge-brand">{v}</span> },
+    { key:"local",          label:"Local" },
     { key:"rol",            label:"Rol" },
-    { key:"pushNoShow",     label:"Push No Show",        render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
-    { key:"pushBusqueda",   label:"Push Búsqueda activa",render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
-    { key:"totalAlcanzado", label:"Total Alcanzado",     render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
+    { key:"pushNoShow",     label:"Push No Show",         render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
+    { key:"pushBusqueda",   label:"Push Búsqueda activa", render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
+    { key:"totalAlcanzado", label:"Total Alcanzado",      render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
+    { key:"_agendado",      label:"Agendado",             render: (_, row) => {
+        const n = countAgendados(row);
+        return n > 0 ? <span style={{fontWeight:700, color:"#0143f9"}}>{n}</span>
+                     : <span style={{color:"#94a3b8"}}>0</span>;
+    }},
   ];
 
   return (
     <div>
       <div className="content-header">
         <div className="content-title">Avance</div>
-        <div className="content-sub">Seguimiento de avance por sala y rol</div>
+        <div className="content-sub">Seguimiento de avance por local y rol</div>
       </div>
       <div className="filters-row">
         <div className="search-wrap">
           <span className="search-icon">⌕</span>
-          <input className="filter-input" placeholder="Buscar por sala..."
-            value={srchSala} onChange={e=>setSS(e.target.value)} />
+          <input className="filter-input" placeholder="Buscar por local..."
+            value={srchLocal} onChange={e=>setSL(e.target.value)} />
         </div>
         <select className="filter-select" value={fBrand} onChange={e=>setFB(e.target.value)}>
           <option value="">Brand ▾</option>
@@ -613,7 +633,7 @@ function App() {
           )}
           {menu === "solicitudes" && <SolicitudesTab fecha={fecha} autoRefresh={autoRefresh} />}
           {menu === "reposicion"  && <ReposicionTab  fecha={fecha} autoRefresh={autoRefresh} />}
-          {menu === "avance"      && <AvanceTab      fecha={fecha} autoRefresh={autoRefresh} />}
+          {menu === "avance"      && <AvanceTab      autoRefresh={autoRefresh} />}
         </div>
       </div>
     </div>

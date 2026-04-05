@@ -235,7 +235,8 @@ const { useState, useEffect, useMemo, useCallback, useRef } = React;
 /* ══════════════════════════════════════════════════════
    ⚠️  REEMPLAZA CON TU URL DEL GAS
    ══════════════════════════════════════════════════════ */
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzqHnM4KVPz9tBJnsMLWrExjWydyOZ4Mcix4qAVFZ0B7-AjLzFYtP4vNKJtlKi3iqY/exec";
+const GAS_URL             = "https://script.google.com/macros/s/AKfycbzqHnM4KVPz9tBJnsMLWrExjWydyOZ4Mcix4qAVFZ0B7-AjLzFYtP4vNKJtlKi3iqY/exec";
+const GAS_SUPPLY_BD_URL   = "https://script.google.com/macros/s/AKfycbzqHnM4KVPz9tBJnsMLWrExjWydyOZ4Mcix4qAVFZ0B7-AjLzFYtP4vNKJtlKi3iqY/exec";
 
 const PAGE_SIZE = 10;
 
@@ -313,6 +314,7 @@ function Sidebar({ active, onSelect, onLogout }) {
     { id:"solicitudes", label:"Solicitudes" },
     { id:"reposicion",  label:"Reposición" },
     { id:"avance",      label:"Avance" },
+    { id:"supply",      label:"Supply" },
   ];
   return (
     <aside className="sidebar">
@@ -759,6 +761,86 @@ function AvanceTab({ data, agendados, loading, fecha, onRefresh }) {
   );
 }
 
+/* ════════════ SUPPLY TAB ════════════ */
+function SupplyTab({ data, loading, fecha, onRefresh }) {
+  const [srchLocal, setSL] = useState("");
+  const [fBrand,    setFB] = useState("");
+  const [fRol,      setFR] = useState("");
+
+  const fechaDMY = isoToDMY(fecha);
+  const brands   = useMemo(() => [...new Set(data.map(r=>r.cliente).filter(Boolean))].sort(), [data]);
+  const roles    = useMemo(() => [...new Set(data.map(r=>r.rol).filter(Boolean))].sort(), [data]);
+
+  const filtered = useMemo(() => data.filter(r => {
+    if (fechaDMY && r.fechaCorregida !== fechaDMY) return false;
+    if (fBrand && r.cliente !== fBrand) return false;
+    if (fRol   && r.rol    !== fRol)    return false;
+    if (srchLocal && !String(r.local||"").toLowerCase().includes(srchLocal.toLowerCase())) return false;
+    return true;
+  }), [data, fechaDMY, fBrand, fRol, srchLocal]);
+
+  // Stat cards por rol
+  const roleStats = useMemo(() => {
+    return ["Picker","Driver","Shopper"].map(rol => ({
+      rol,
+      count: filtered.filter(r => eqCI(r.rol, rol)).length
+    }));
+  }, [filtered]);
+
+  const cols = [
+    { key:"cliente",       label:"Brand" },
+    { key:"local",         label:"Local" },
+    { key:"rol",           label:"Rol" },
+    { key:"telefono",      label:"Teléfono" },
+    { key:"nombre",        label:"Nombre" },
+    { key:"fechaElegida",  label:"Fecha Elegida" },
+    { key:"turno",         label:"Turno" },
+    { key:"fechaCorregida",label:"Fecha Corregida" },
+  ];
+
+  return (
+    <div>
+      <div className="content-header">
+        <div className="content-title">Supply</div>
+        <div className="content-sub">Agendados en salas de Supply · {filtered.length} registros</div>
+      </div>
+
+      {/* Stat cards */}
+      <div className="stats-row" style={{marginBottom:20}}>
+        <div className="stat-card">
+          <div className="stat-value">{filtered.length}</div>
+          <div className="stat-label">Total</div>
+        </div>
+        {roleStats.map(({rol, count}) => (
+          <div className="stat-card" key={rol}>
+            <div className="stat-value">{count}</div>
+            <div className="stat-label">{rol}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filtros */}
+      <div className="filters-row">
+        <div className="search-wrap">
+          <span className="search-icon">⌕</span>
+          <input className="filter-input" placeholder="Buscar local..." value={srchLocal} onChange={e=>setSL(e.target.value)} />
+        </div>
+        <select className="filter-select" value={fBrand} onChange={e=>setFB(e.target.value)}>
+          <option value="">Todos los brand</option>
+          {brands.map(b=><option key={b} value={b}>{b}</option>)}
+        </select>
+        <select className="filter-select" value={fRol} onChange={e=>setFR(e.target.value)}>
+          <option value="">Todos los roles</option>
+          {roles.map(r=><option key={r} value={r}>{r}</option>)}
+        </select>
+        <button className="icon-btn" onClick={onRefresh} title="Actualizar">↺</button>
+      </div>
+
+      <DataTable columns={cols} rows={filtered} loading={loading} emptyText="Sin registros Supply para el período seleccionado" />
+    </div>
+  );
+}
+
 /* ════════════ APP — carga única de todos los datos ════════════ */
 function App() {
   const [auth, setAuth]       = useState(sessionStorage.getItem("zubale_panel_auth")==="1");
@@ -770,13 +852,14 @@ function App() {
   const [agendados,   setAgendados]   = useState([]);
   const [solicitudes, setSolicitudes] = useState([]);
   const [avance,      setAvance]      = useState([]);
+  const [supplyData,  setSupplyData]  = useState([]);
   const [loading,     setLoading]     = useState(false);
   const timerRef = useRef(null);
 
   const loadAll = useCallback((force = false) => {
     if (!auth) return;
-    const get = (action) =>
-      fetch(`${GAS_URL}?action=${action}`).then(r=>r.json())
+    const get = (action, baseUrl = GAS_URL) =>
+      fetch(`${baseUrl}?action=${action}`).then(r=>r.json())
         .then(res => res.data || []).catch(() => []);
 
     setLoading(true);
@@ -784,10 +867,12 @@ function App() {
       get("getAgendados"),
       get("getSolicitudes"),
       get("getAvance"),
-    ]).then(([ag, sol, av]) => {
+      get("getAgendadosSupply", GAS_SUPPLY_BD_URL),
+    ]).then(([ag, sol, av, sup]) => {
       setAgendados(ag);
       setSolicitudes(sol);
       setAvance(av);
+      setSupplyData(sup);
       setLoading(false);
     });
   }, [auth]);
@@ -841,6 +926,9 @@ function App() {
           )}
           {menu === "avance" && (
             <AvanceTab data={avance} agendados={agendados} loading={loading} fecha={fecha} onRefresh={loadAll} />
+          )}
+          {menu === "supply" && (
+            <SupplyTab data={supplyData} loading={loading} fecha={fecha} onRefresh={loadAll} />
           )}
         </div>
       </div>

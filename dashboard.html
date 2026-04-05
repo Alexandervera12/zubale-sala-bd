@@ -805,10 +805,10 @@ function SupplyTab({ data, loading, fecha, onRefresh }) {
       </div>
 
       {/* Stat cards */}
-      <div className="stats-row" style={{marginBottom:20}}>
+      <div className="stat-cards">
         <div className="stat-card">
           <div className="stat-value">{filtered.length}</div>
-          <div className="stat-label">Total</div>
+          <div className="stat-label">Total usuarios agendados</div>
         </div>
         {roleStats.map(({rol, count}) => (
           <div className="stat-card" key={rol}>

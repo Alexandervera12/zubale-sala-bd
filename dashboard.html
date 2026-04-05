@@ -191,6 +191,35 @@
     .auth-btn:disabled { opacity: .55; cursor: not-allowed; }
     .auth-error { color: #dc2626; font-size: 13px; margin-bottom: 14px; background: #fef2f2; padding: 8px 12px; border-radius: 8px; }
 
+    /* ── Brand cards ── */
+    .brand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .brand-card {
+      background: #fff; border-radius: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07); overflow: hidden;
+    }
+    .brand-card-header {
+      background: #0143f9; color: #fff;
+      padding: 12px 20px; font-size: 13px; font-weight: 800;
+      letter-spacing: .06em; text-transform: uppercase;
+    }
+    .brand-card-body { display: flex; }
+    .brand-section {
+      flex: 1; padding: 14px 16px;
+      border-right: 1px solid #f1f5f9;
+    }
+    .brand-section:last-child { border-right: none; }
+    .brand-section-title {
+      font-size: 9px; font-weight: 800; color: #94a3b8;
+      letter-spacing: .08em; text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .brand-kv { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .brand-kv-label { font-size: 12px; color: #64748b; }
+    .brand-kv-val   { font-size: 14px; font-weight: 800; color: #1a1a3e; }
+    .brand-kv-val.ok  { color: #15803d; }
+    .brand-kv-val.err { color: #991b1b; }
+    .brand-kv-val.blue { color: #0143f9; }
+
     /* ── Misc ── */
     .loading-txt  { padding: 52px; text-align: center; color: #94a3b8; font-size: 14px; }
     .placeholder-tab { text-align: center; padding: 80px 40px; color: #94a3b8; }
@@ -450,93 +479,127 @@ function ReposicionTab({ data, loading, fecha, onRefresh }) {
 function DashboardTab({ agendados, solicitudes, avance, fecha }) {
   const fechaDMY = isoToDMY(fecha);
 
-  // Reposición: agendados con estado, filtrados por fecha si hay
-  const repHoy = useMemo(() => agendados.filter(r =>
+  // Datos filtrados por fecha
+  const repData = useMemo(() => agendados.filter(r =>
     r.estado && (!fecha || r.fecha === fechaDMY)
   ), [agendados, fecha, fechaDMY]);
 
-  // Solicitudes filtradas por fecha
-  const solHoy = useMemo(() => solicitudes.filter(r =>
+  const solData = useMemo(() => solicitudes.filter(r =>
     !fecha || r.fecha === fechaDMY
   ), [solicitudes, fecha, fechaDMY]);
 
-  const solAprobadas  = solHoy.filter(r => r.estado.toLowerCase().includes("aprob")).length;
-  const solRechazadas = solHoy.filter(r => r.estado.toLowerCase().includes("rechaz") || r.estado.toLowerCase().includes("cancel")).length;
-  const solPendientes = solHoy.filter(r => r.estado.toLowerCase().includes("pendiente") || r.estado.toLowerCase().includes("process")).length;
+  const avData = useMemo(() => avance.filter(r =>
+    !fecha || r.fecha === fechaDMY
+  ), [avance, fecha, fechaDMY]);
 
-  const roles = ["Shopper","Picker","Driver"];
+  // Todos los brands únicos combinando las 3 fuentes
+  const brands = useMemo(() => {
+    const set = new Set([
+      ...repData.map(r => r.brand),
+      ...solData.map(r => r.brand),
+      ...avData.map(r => r.brand),
+    ].filter(Boolean).map(b => b.toUpperCase()));
+    return [...set].sort();
+  }, [repData, solData, avData]);
 
-  // Últimos 5 agendados con estado (más recientes primero)
+  const labelFecha = fecha ? fechaDMY : "Todos los días";
+
+  // Últimos 5 agendados con estado
   const recientes = [...agendados].filter(r => r.estado).slice(-5).reverse();
 
-  const labelFecha = fecha ? `· ${fechaDMY}` : "· Todos los días";
+  // Helpers por brand
+  const repBrand = (b) => repData.filter(r => r.brand.toUpperCase() === b);
+  const solBrand = (b) => solData.filter(r => r.brand.toUpperCase() === b);
+  const avBrand  = (b) => avData.filter(r => r.brand.toUpperCase() === b);
+  const sumAv = (rows, key) => rows.reduce((acc, r) => acc + (parseFloat(r[key]) || 0), 0);
 
   return (
     <div>
-      <div className="content-header">
+      <div className="content-header" style={{marginBottom:8}}>
         <div className="content-title">Dashboard</div>
-        <div className="content-sub">Resumen general de operaciones {labelFecha}</div>
+        <div className="content-sub">Resumen por brand · {labelFecha}</div>
       </div>
 
-      {/* ── Sección Reposición ── */}
-      <div style={{marginBottom:8, fontSize:11, fontWeight:700, color:"#0143f9", letterSpacing:".06em", textTransform:"uppercase"}}>
-        Reposición
-      </div>
-      <div className="stat-cards" style={{marginBottom:28}}>
-        <div className="stat-card" style={{borderColor:"#0143f9"}}>
-          <div className="stat-value">{repHoy.length}</div>
-          <div className="stat-label">Total agendados</div>
-        </div>
-        {roles.map(rol => {
-          const count = repHoy.filter(r => eqCI(r.rol, rol)).length;
-          const colors = { Shopper:"#6366f1", Picker:"#0891b2", Driver:"#059669" };
+      {/* ── Tarjetas por brand ── */}
+      <div className="brand-grid">
+        {brands.map(brand => {
+          const rep = repBrand(brand);
+          const sol = solBrand(brand);
+          const av  = avBrand(brand);
+          const ns     = sumAv(av, "pushNoShow");
+          const activa = sumAv(av, "pushBusqueda");
+          const total  = sumAv(av, "totalAlcanzado");
           return (
-            <div className="stat-card" key={rol} style={{borderColor: colors[rol]}}>
-              <div className="stat-value" style={{color: colors[rol]}}>{count}</div>
-              <div className="stat-label">{rol}</div>
+            <div className="brand-card" key={brand}>
+              <div className="brand-card-header">{brand}</div>
+              <div className="brand-card-body">
+
+                {/* Reposición */}
+                <div className="brand-section">
+                  <div className="brand-section-title">Reposición</div>
+                  <div className="brand-kv">
+                    <span className="brand-kv-label">Total</span>
+                    <span className="brand-kv-val blue">{rep.length}</span>
+                  </div>
+                  {["Shopper","Picker","Driver"].map(rol => (
+                    <div className="brand-kv" key={rol}>
+                      <span className="brand-kv-label">{rol}</span>
+                      <span className="brand-kv-val">{rep.filter(r=>eqCI(r.rol,rol)).length}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Solicitudes */}
+                <div className="brand-section">
+                  <div className="brand-section-title">Solicitudes</div>
+                  <div className="brand-kv">
+                    <span className="brand-kv-label">Total</span>
+                    <span className="brand-kv-val blue">{sol.length}</span>
+                  </div>
+                  <div className="brand-kv">
+                    <span className="brand-kv-label">Aprobadas</span>
+                    <span className="brand-kv-val ok">{sol.filter(r=>r.estado.toLowerCase().includes("aprob")).length}</span>
+                  </div>
+                  <div className="brand-kv">
+                    <span className="brand-kv-label">Rechazadas</span>
+                    <span className="brand-kv-val err">{sol.filter(r=>r.estado.toLowerCase().includes("rechaz")||r.estado.toLowerCase().includes("cancel")).length}</span>
+                  </div>
+                </div>
+
+                {/* Avance */}
+                <div className="brand-section">
+                  <div className="brand-section-title">Avance</div>
+                  <div className="brand-kv">
+                    <span className="brand-kv-label">NS</span>
+                    <span className="brand-kv-val">{ns || "–"}</span>
+                  </div>
+                  <div className="brand-kv">
+                    <span className="brand-kv-label">Activa</span>
+                    <span className="brand-kv-val">{activa || "–"}</span>
+                  </div>
+                  <div className="brand-kv">
+                    <span className="brand-kv-label">Total</span>
+                    <span className="brand-kv-val blue">{total || "–"}</span>
+                  </div>
+                </div>
+
+              </div>
             </div>
           );
         })}
+        {brands.length === 0 && (
+          <div style={{color:"#94a3b8",fontSize:14,padding:"40px 0"}}>Sin datos para el período seleccionado</div>
+        )}
       </div>
 
-      {/* ── Sección Solicitudes ── */}
-      <div style={{marginBottom:8, fontSize:11, fontWeight:700, color:"#0143f9", letterSpacing:".06em", textTransform:"uppercase"}}>
-        Solicitudes
-      </div>
-      <div className="stat-cards" style={{marginBottom:28}}>
-        <div className="stat-card" style={{borderColor:"#0143f9"}}>
-          <div className="stat-value">{solHoy.length}</div>
-          <div className="stat-label">Total solicitudes</div>
-        </div>
-        <div className="stat-card" style={{borderColor:"#15803d"}}>
-          <div className="stat-value" style={{color:"#15803d"}}>{solAprobadas}</div>
-          <div className="stat-label">Aprobadas</div>
-        </div>
-        <div className="stat-card" style={{borderColor:"#854d0e"}}>
-          <div className="stat-value" style={{color:"#854d0e"}}>{solPendientes}</div>
-          <div className="stat-label">Pendientes</div>
-        </div>
-        <div className="stat-card" style={{borderColor:"#991b1b"}}>
-          <div className="stat-value" style={{color:"#991b1b"}}>{solRechazadas}</div>
-          <div className="stat-label">Rechazadas</div>
-        </div>
-      </div>
-
-      {/* ── Últimos agendados ── */}
-      <div style={{marginBottom:8, fontSize:11, fontWeight:700, color:"#0143f9", letterSpacing:".06em", textTransform:"uppercase"}}>
+      {/* ── Últimos registros ── */}
+      <div style={{marginBottom:8,fontSize:11,fontWeight:700,color:"#0143f9",letterSpacing:".06em",textTransform:"uppercase"}}>
         Últimos registros en Reposición
       </div>
       <div className="table-card">
         <table className="data-table">
           <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Local</th>
-              <th>Rol</th>
-              <th>Brand</th>
-              <th>Fecha</th>
-              <th>Estado</th>
-            </tr>
+            <tr><th>Nombre</th><th>Local</th><th>Rol</th><th>Brand</th><th>Fecha</th><th>Estado</th></tr>
           </thead>
           <tbody>
             {recientes.length === 0

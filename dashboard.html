@@ -581,6 +581,10 @@ function DashboardTab({ agendados, solicitudes, avance, fecha }) {
                     <span className="brand-kv-label">Total</span>
                     <span className="brand-kv-val blue">{total || "–"}</span>
                   </div>
+                  <div className="brand-kv" style={{marginTop:6,paddingTop:6,borderTop:"1px solid #f1f5f9"}}>
+                    <span className="brand-kv-label">Agendados</span>
+                    <span className="brand-kv-val blue">{new Set(rep.map(r=>r.telefono)).size}</span>
+                  </div>
                 </div>
 
               </div>
@@ -590,6 +594,70 @@ function DashboardTab({ agendados, solicitudes, avance, fecha }) {
         {brands.length === 0 && (
           <div style={{color:"#94a3b8",fontSize:14,padding:"40px 0"}}>Sin datos para el período seleccionado</div>
         )}
+      </div>
+
+      {/* ── Tarjeta Totales ── */}
+      <div style={{marginBottom:8,fontSize:11,fontWeight:700,color:"#0143f9",letterSpacing:".06em",textTransform:"uppercase"}}>
+        Totales globales
+      </div>
+      <div className="brand-card" style={{marginBottom:28}}>
+        <div className="brand-card-header" style={{background:"#1a1a3e"}}>TOTAL · TODOS LOS BRANDS</div>
+        <div className="brand-card-body">
+
+          {/* Total Reposición */}
+          <div className="brand-section">
+            <div className="brand-section-title">Reposición</div>
+            <div className="brand-kv">
+              <span className="brand-kv-label">Total agendados</span>
+              <span className="brand-kv-val blue">{repData.length}</span>
+            </div>
+            {["Shopper","Picker","Driver"].map(rol => (
+              <div className="brand-kv" key={rol}>
+                <span className="brand-kv-label">{rol}</span>
+                <span className="brand-kv-val">{repData.filter(r=>eqCI(r.rol,rol)).length}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Total Solicitudes */}
+          <div className="brand-section">
+            <div className="brand-section-title">Solicitudes</div>
+            <div className="brand-kv">
+              <span className="brand-kv-label">Total</span>
+              <span className="brand-kv-val blue">{solData.length}</span>
+            </div>
+            <div className="brand-kv">
+              <span className="brand-kv-label">Aprobadas</span>
+              <span className="brand-kv-val ok">{solData.filter(r=>r.estado.toLowerCase().includes("aprob")).length}</span>
+            </div>
+            <div className="brand-kv">
+              <span className="brand-kv-label">Rechazadas</span>
+              <span className="brand-kv-val err">{solData.filter(r=>r.estado.toLowerCase().includes("rechaz")||r.estado.toLowerCase().includes("cancel")).length}</span>
+            </div>
+          </div>
+
+          {/* Total Avance */}
+          <div className="brand-section">
+            <div className="brand-section-title">Avance</div>
+            <div className="brand-kv">
+              <span className="brand-kv-label">NS</span>
+              <span className="brand-kv-val">{sumAv(avData,"pushNoShow") || "–"}</span>
+            </div>
+            <div className="brand-kv">
+              <span className="brand-kv-label">Activa</span>
+              <span className="brand-kv-val">{sumAv(avData,"pushBusqueda") || "–"}</span>
+            </div>
+            <div className="brand-kv">
+              <span className="brand-kv-label">Total</span>
+              <span className="brand-kv-val blue">{sumAv(avData,"totalAlcanzado") || "–"}</span>
+            </div>
+            <div className="brand-kv" style={{marginTop:6,paddingTop:6,borderTop:"1px solid #f1f5f9"}}>
+              <span className="brand-kv-label">Agendados</span>
+              <span className="brand-kv-val blue">{new Set(repData.map(r=>r.telefono)).size}</span>
+            </div>
+          </div>
+
+        </div>
       </div>
 
       {/* ── Últimos registros ── */}

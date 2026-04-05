@@ -2,837 +2,615 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Zubale – Salas</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zubale · Panel de Gestión</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Lexend', sans-serif; background: #eef2ff; }
+    input, button, select, textarea { font-family: 'Lexend', sans-serif; }
 
-    :root {
-      --blue:        #1557D6;
-      --blue2:       #1B4FFF;
-      --blue-light:  #DBEAFE;
-      --blue-dark:   #0A1A6B;
-      --blue-deeper: #0B3BAA;
-      --gray:        #F3F6FA;
-      --gray2:       #E5E7EB;
-      --text:        #1A2340;
-      --muted:       #6B7A9A;
-      --white:       #FFFFFF;
-      --success:     #10B981;
-      --warn-bg:     #FEF9C3;
-      --warn-border: #FDE047;
-      --warn-text:   #854D0E;
-    }
+    /* ── Layout ── */
+    .layout { display: flex; height: 100vh; overflow: hidden; }
 
-    html, body { height: 100%; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--gray); color: var(--text); }
-    #root { min-height: 100vh; }
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 200px; background: #0143f9;
+      display: flex; flex-direction: column; flex-shrink: 0;
+    }
+    .sidebar-logo {
+      padding: 22px 20px 28px;
+      display: flex; align-items: center;
+    }
+    .sidebar-logo img { height: 32px; object-fit: contain; }
+    .sidebar-nav { flex: 1; padding: 0 10px; display: flex; flex-direction: column; gap: 2px; }
+    .sidebar-item {
+      display: flex; align-items: center; gap: 10px; width: 100%;
+      padding: 10px 12px; border: none; background: transparent;
+      color: rgba(255,255,255,0.75); font-size: 14px; font-weight: 500;
+      border-radius: 8px; cursor: pointer; text-align: left; transition: all .15s;
+    }
+    .sidebar-item:hover:not(.disabled) { background: rgba(255,255,255,0.15); color: #fff; }
+    .sidebar-item.active { background: rgba(255,255,255,0.2); color: #fff; font-weight: 700; }
+    .sidebar-item.disabled { opacity: .45; cursor: not-allowed; }
+    .sidebar-icon { font-size: 16px; }
+    .sidebar-bottom { padding: 14px 10px 20px; }
+    .sidebar-logout {
+      width: 100%; padding: 9px 12px; border: none;
+      background: transparent; color: rgba(255,255,255,0.6);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      text-align: left; letter-spacing: .02em;
+    }
+    .sidebar-logout:hover { color: #fff; }
 
-    /* ── HEADER ── */
-    .header {
-      background: var(--white);
-      padding: 0 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 64px;
-      box-shadow: 0 1px 0 var(--gray2);
-      position: sticky;
-      top: 0;
-      z-index: 50;
+    /* ── Main ── */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+    .main-header {
+      background: #fff; border-bottom: 1px solid #e2e8f0;
+      padding: 14px 28px; display: flex; align-items: center;
+      justify-content: space-between; flex-shrink: 0;
     }
-    .header-logo { display: flex; align-items: center; }
-    .user-badge {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--blue-light);
-      color: var(--blue);
-      font-size: 13px;
-      font-weight: 700;
-      padding: 6px 14px;
-      border-radius: 99px;
-      border: 1px solid #BFDBFE;
-    }
+    .header-titles {}
+    .header-title { font-size: 16px; font-weight: 700; color: #1a1a3e; }
+    .header-sub   { font-size: 12px; color: #94a3b8; margin-top: 1px; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .header-logo { height: 28px; object-fit: contain; }
 
-    /* ── PHONE SCREEN ── */
-    .phone-screen {
-      min-height: calc(100vh - 64px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px 20px;
-      background: var(--gray);
-    }
+    /* ── Content ── */
+    .content { flex: 1; overflow-y: auto; padding: 28px; }
+    .content-header { margin-bottom: 20px; }
+    .content-title { font-size: 22px; font-weight: 800; color: #1a1a3e; margin-bottom: 2px; }
+    .content-sub   { font-size: 13px; color: #94a3b8; }
 
-    .phone-card {
-      background: var(--white);
-      border-radius: 28px;
-      box-shadow: 0 20px 60px rgba(21,87,214,0.12);
-      padding: 48px 40px 40px;
-      width: 100%;
-      max-width: 440px;
-      text-align: center;
+    /* ── Filters bar ── */
+    .filters-row { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+    .search-wrap { position: relative; }
+    .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; }
+    .filter-input {
+      padding: 7px 10px 7px 30px; border: 1.5px solid #e2e8f0; border-radius: 8px;
+      font-size: 13px; outline: none; min-width: 200px; background: #fff; color: #1e293b;
     }
+    .filter-input:focus { border-color: #0143f9; }
+    .filter-select {
+      padding: 7px 28px 7px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px;
+      font-size: 13px; outline: none; background: #fff; cursor: pointer; color: #1e293b;
+      appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 9px center;
+    }
+    .filter-date {
+      padding: 7px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px;
+      font-size: 13px; outline: none; background: #fff; color: #1e293b; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .filter-date input { border: none; outline: none; font-size: 13px; color: #1e293b; background: transparent; }
+    .icon-btn {
+      width: 34px; height: 34px; border: 1.5px solid #e2e8f0; border-radius: 8px;
+      background: #fff; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; font-size: 15px; color: #475569; transition: all .15s;
+    }
+    .icon-btn:hover { background: #f1f5f9; }
+    .auto-refresh-toggle {
+      display: flex; align-items: center; gap: 6px; margin-left: auto;
+      font-size: 12px; color: #64748b; cursor: pointer;
+    }
+    .toggle-dot {
+      width: 32px; height: 18px; border-radius: 99px; background: #e2e8f0;
+      position: relative; transition: background .2s; flex-shrink: 0;
+    }
+    .toggle-dot.on { background: #0143f9; }
+    .toggle-dot::after {
+      content: ''; position: absolute; width: 14px; height: 14px;
+      background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: left .2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+    .toggle-dot.on::after { left: 16px; }
 
-    @media (max-width: 480px) {
-      .phone-card { padding: 36px 24px 32px; border-radius: 20px; }
+    /* ── Table card ── */
+    .table-card { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.07); overflow: hidden; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .data-table th {
+      padding: 13px 16px; text-align: left;
+      font-size: 13px; font-weight: 700; color: #0143f9;
+      border-bottom: 1.5px solid #e2e8f0; background: #fff;
     }
+    .data-table td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+    .data-table tbody tr:hover { background: #f8faff; }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .empty-td { text-align: center; color: #94a3b8; padding: 52px !important; font-size: 14px; }
 
-    .phone-card-icon {
-      width: 72px;
-      height: 72px;
-      border-radius: 20px;
-      background: var(--blue-light);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 34px;
-      margin: 0 auto 20px;
+    /* ── Pagination ── */
+    .pagination {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-top: 1px solid #f1f5f9;
+      font-size: 13px; color: #64748b;
     }
-
-    .phone-card-title {
-      font-size: clamp(20px, 4vw, 26px);
-      font-weight: 800;
-      color: var(--text);
-      margin-bottom: 10px;
-      line-height: 1.25;
-    }
-
-    .phone-card-sub {
-      font-size: 14px;
-      color: var(--muted);
-      margin-bottom: 32px;
-      line-height: 1.5;
-    }
-
-    /* ── INPUT ── */
-    .phone-input-wrap {
-      display: flex;
-      align-items: center;
-      border: 2px solid var(--gray2);
-      border-radius: 14px;
-      overflow: hidden;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      margin-bottom: 16px;
-      background: var(--white);
-    }
-    .phone-input-wrap:focus-within {
-      border-color: var(--blue);
-      box-shadow: 0 0 0 3px rgba(21,87,214,0.12);
-    }
-    .phone-prefix {
-      padding: 0 16px;
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--text);
-      border-right: 2px solid var(--gray2);
-      height: 52px;
-      display: flex;
-      align-items: center;
-      background: var(--gray);
-      white-space: nowrap;
-    }
-    .phone-input {
-      flex: 1;
-      border: none;
-      outline: none;
-      padding: 0 16px;
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--text);
-      height: 52px;
-      font-family: inherit;
-      letter-spacing: 1px;
-    }
-    .phone-input::placeholder { color: var(--muted); font-weight: 400; font-size: 15px; letter-spacing: 0; }
-
-    /* ── BUTTONS ── */
-    .btn-primary {
-      width: 100%;
-      padding: 16px;
-      border-radius: 14px;
-      border: none;
-      background: var(--blue);
-      color: var(--white);
-      font-size: 16px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 4px 16px rgba(21,87,214,0.3);
-      font-family: inherit;
-      letter-spacing: 0.3px;
-    }
-    .btn-primary:hover:not(:disabled) { background: var(--blue2); transform: translateY(-1px); box-shadow: 0 6px 22px rgba(21,87,214,0.4); }
-    .btn-primary:active:not(:disabled) { transform: scale(0.98); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .btn-secondary {
-      width: 100%;
-      padding: 13px;
-      border-radius: 12px;
-      border: 2px solid var(--gray2);
-      background: var(--white);
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 10px;
-      transition: all 0.2s;
-      font-family: inherit;
-    }
-    .btn-secondary:hover { border-color: var(--blue); color: var(--blue); }
-
-    /* ── CENTERED SCREENS (loading, error, not-found) ── */
-    .fullscreen-center {
-      min-height: calc(100vh - 64px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-    }
-
-    .status-card {
-      text-align: center;
-      background: var(--white);
-      border-radius: 24px;
-      padding: 48px 36px;
-      max-width: 400px;
-      width: 100%;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
-    }
-
-    .status-icon { font-size: 52px; margin-bottom: 16px; }
-    .status-title { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 10px; }
-    .status-text { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 28px; }
-
-    /* Loading spinner */
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid var(--blue-light);
-      border-top-color: var(--blue);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 20px;
-    }
-
-    /* ── HERO ── */
-    .hero {
-      background: var(--blue);
-      color: var(--white);
-      padding: 36px 24px 28px;
-      text-align: center;
-    }
-    .hero h1 { font-size: clamp(20px, 4vw, 28px); font-weight: 800; margin-bottom: 8px; line-height: 1.2; }
-    .hero p { font-size: 15px; opacity: 0.85; max-width: 480px; margin: 0 auto; line-height: 1.5; }
-
-    /* ── MAIN ── */
-    .main { max-width: 1100px; margin: 0 auto; padding: 32px 20px 60px; }
-    .section-title { font-size: 18px; font-weight: 700; color: var(--text); }
-    .section-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; margin-top: 4px; }
-
-    .pill-count {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--blue-light);
-      color: var(--blue);
-      font-size: 13px;
-      font-weight: 700;
-      padding: 4px 14px;
-      border-radius: 99px;
-      margin-left: 10px;
-    }
-
-    /* ── CARDS GRID ── */
-    .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-    }
-    @media (max-width: 900px) { .cards-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 480px) { .cards-grid { grid-template-columns: 1fr 1fr; gap: 10px; } }
-
-    .store-card {
-      background: var(--white);
-      border-radius: 16px;
-      padding: 22px 16px 18px;
-      cursor: pointer;
-      border: 2px solid transparent;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-      transition: all 0.22s cubic-bezier(.4,0,.2,1);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      text-align: center;
-    }
-    .store-card:hover { border-color: var(--blue); box-shadow: 0 6px 24px rgba(21,87,214,0.15); transform: translateY(-3px); }
-    .store-card:active { transform: scale(0.97); }
-
-    .store-icon-wrap {
-      width: 56px; height: 56px;
-      border-radius: 14px;
-      background: var(--blue-light);
+    .pag-btns { display: flex; gap: 6px; }
+    .pag-btn {
+      width: 30px; height: 30px; border: 1.5px solid #e2e8f0; border-radius: 6px;
+      background: #fff; cursor: pointer; font-size: 14px; color: #475569;
       display: flex; align-items: center; justify-content: center;
-      font-size: 28px;
-      transition: background 0.2s;
     }
-    .store-card:hover .store-icon-wrap { background: var(--blue); }
-    .store-card:hover .store-emoji { filter: brightness(0) invert(1); }
+    .pag-btn:hover:not(:disabled) { background: #f1f5f9; }
+    .pag-btn:disabled { opacity: .35; cursor: not-allowed; }
 
-    .store-name { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; }
-    .store-cta { font-size: 12px; color: var(--blue); font-weight: 600; }
-
-    /* ── EMPTY ── */
-    .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
-    .empty-icon { font-size: 48px; margin-bottom: 12px; }
-    .empty-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
-    .empty-text { font-size: 14px; }
-
-    /* ── WARNING BOX ── */
-    .warn-box {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      background: var(--warn-bg);
-      border: 1.5px solid var(--warn-border);
-      border-radius: 12px;
-      padding: 14px;
+    /* ── Stat cards ── */
+    .stat-cards { display: flex; gap: 14px; margin-bottom: 20px; }
+    .stat-card {
+      background: #fff; border-radius: 12px; padding: 18px 22px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07); min-width: 180px;
+      border-top: 3px solid #0143f9;
     }
-    .warn-box-icon { font-size: 18px; flex-shrink: 0; }
-    .warn-box-text { font-size: 13px; font-weight: 600; color: var(--warn-text); line-height: 1.5; }
+    .stat-value { font-size: 30px; font-weight: 800; color: #1a1a3e; }
+    .stat-label { font-size: 12px; color: #94a3b8; margin-top: 4px; font-weight: 500; }
 
-    /* ── MODAL ── */
-    .overlay {
-      position: fixed; inset: 0;
-      background: rgba(17,9,40,0.55);
-      backdrop-filter: blur(3px);
+    /* ── Badges ── */
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; }
+    .badge-brand    { background: #eef2ff; color: #0143f9; }
+    .badge-ok       { background: #dcfce7; color: #15803d; }
+    .badge-warn     { background: #fef9c3; color: #854d0e; }
+    .badge-err      { background: #fee2e2; color: #991b1b; }
+    .badge-neutral  { background: #f1f5f9; color: #475569; }
+
+    /* ── Auth split-screen ── */
+    .auth-layout { display: flex; min-height: 100vh; }
+    .auth-left {
+      flex: 7; background: #0143f9;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 10px;
+      padding: 40px;
+    }
+    .auth-left-logo { height: 80px; object-fit: contain; }
+    .auth-left-title { font-size: 22px; font-weight: 700; color: #fff; margin-top: 10px; }
+    .auth-left-sub   { font-size: 14px; color: rgba(255,255,255,.65); }
+    .auth-right {
+      flex: 3; background: #fff;
       display: flex; align-items: center; justify-content: center;
-      z-index: 100; padding: 20px;
-      animation: fadeIn 0.18s ease;
+      padding: 48px 52px;
     }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .auth-form-wrap { width: 100%; max-width: 360px; }
+    .auth-form-title { font-size: 20px; font-weight: 800; color: #1a1a3e; margin-bottom: 28px; }
+    .auth-label {
+      display: block; font-size: 13px; font-weight: 600;
+      color: #374151; margin-bottom: 6px;
+    }
+    .auth-input {
+      width: 100%; padding: 11px 14px; border: 1.5px solid #e2e8f0;
+      border-radius: 8px; font-size: 14px; outline: none; margin-bottom: 18px; color: #1a1a3e;
+    }
+    .auth-input:focus { border-color: #0143f9; box-shadow: 0 0 0 3px rgba(21,87,214,.1); }
+    .auth-btn {
+      width: 100%; padding: 12px; background: #0143f9; color: #fff;
+      border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+    .auth-btn:hover:not(:disabled) { background: #1228c4; }
+    .auth-btn:disabled { opacity: .55; cursor: not-allowed; }
+    .auth-error { color: #dc2626; font-size: 13px; margin-bottom: 14px; background: #fef2f2; padding: 8px 12px; border-radius: 8px; }
 
-    .modal {
-      background: var(--white);
-      border-radius: 24px;
-      width: 100%;
-      max-width: 420px;
-      overflow: hidden;
-      box-shadow: 0 24px 60px rgba(0,0,0,0.22);
-      animation: slideUp 0.22s cubic-bezier(.4,0,.2,1);
-    }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(30px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
-
-    .modal-header { background: var(--blue); padding: 24px 24px 20px; color: var(--white); }
-    .modal-store-icon {
-      width: 48px; height: 48px;
-      background: rgba(255,255,255,0.18);
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 24px;
-      margin-bottom: 12px;
-    }
-    .modal-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
-    .modal-subtitle { font-size: 13px; opacity: 0.8; }
-    .modal-body { padding: 22px 24px 28px; }
-
-    .confirm-detail {
-      text-align: center;
-      font-size: 13px;
-      color: var(--muted);
-      margin: 14px 0 20px;
-      padding: 12px;
-      background: var(--gray);
-      border-radius: 10px;
-      line-height: 1.6;
-    }
-    .confirm-detail strong { color: var(--text); }
-
-    /* ── TOAST ── */
-    .toast {
-      position: fixed;
-      bottom: 30px; left: 50%;
-      transform: translateX(-50%);
-      background: var(--blue-dark);
-      color: var(--white);
-      padding: 18px 24px;
-      border-radius: 18px;
-      max-width: 360px;
-      width: calc(100% - 40px);
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-      z-index: 200;
-      animation: toastIn 0.35s cubic-bezier(.4,0,.2,1);
-      border-left: 4px solid var(--success);
-    }
-    @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(20px) scale(0.96); } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
-    .toast-icon { font-size: 28px; margin-bottom: 8px; }
-    .toast-title { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
-    .toast-msg { font-size: 13px; line-height: 1.5; color: rgba(255,255,255,0.82); }
-
-    /* ── SKELETON ── */
-    @keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
-    .skeleton-card {
-      background: var(--white); border-radius: 16px; padding: 22px 16px 18px;
-      display: flex; flex-direction: column; align-items: center; gap: 12px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-    }
-    .skeleton-block {
-      border-radius: 8px;
-      background: linear-gradient(90deg, #f0f0f0 25%, #e0e8ff 50%, #f0f0f0 75%);
-      background-size: 600px 100%;
-      animation: shimmer 1.4s infinite linear;
-    }
-
-    /* ── FOOTER ── */
-    .footer { text-align: center; padding: 20px; color: var(--muted); font-size: 12px; }
+    /* ── Misc ── */
+    .loading-txt  { padding: 52px; text-align: center; color: #94a3b8; font-size: 14px; }
+    .placeholder-tab { text-align: center; padding: 80px 40px; color: #94a3b8; }
+    .placeholder-tab h3 { font-size: 18px; color: #64748b; margin: 12px 0 6px; }
+    .refresh-indicator { font-size: 11px; color: #94a3b8; margin-left: 6px; }
   </style>
 </head>
 <body>
 <div id="root"></div>
-
 <script type="text/babel">
-const { useState, useEffect, useRef, useMemo } = React;
+const { useState, useEffect, useMemo, useCallback, useRef } = React;
 
-/* ──────────────────────────────────────────────────────────
-   URL del GAS de Sala (mismo script, actualizado con checkUser)
-   ────────────────────────────────────────────────────────── */
-// ⚠️ Pegá acá la URL de la nueva implementación de google-apps-script-sala-bd.js
+/* ══════════════════════════════════════════════════════
+   ⚠️  REEMPLAZA CON TU URL DEL GAS
+   ══════════════════════════════════════════════════════ */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzqHnM4KVPz9tBJnsMLWrExjWydyOZ4Mcix4qAVFZ0B7-AjLzFYtP4vNKJtlKi3iqY/exec";
 
-const ROLE_EMOJI = { Picker: "🛒", Shopper: "🛍️", Driver: "🚙" };
+const PAGE_SIZE = 10;
 
-/* ── Sin pre-fetch separado: todo en una sola llamada getUserAndStores ── */
+/* ── Caché global para no recargar al cambiar de menú ── */
+const _cache = {};
 
-/* ══════════════════════════════════════════════════════════
-   COMPONENTES
-   ══════════════════════════════════════════════════════════ */
-
-function Header({ userInfo }) {
-  return (
-    <header className="header">
-      <div className="header-logo">
-        <img
-          src="https://www.zubale.com/cl/wp-content/uploads/2023/12/logo_zubale_2023.png"
-          alt="Zubale"
-          style={{ height: "32px", width: "auto" }}
-        />
-      </div>
-    </header>
-  );
+/* ── Helpers de fecha ── */
+function todayISO() {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`;
+}
+function isoToDMY(iso) {
+  if (!iso) return "";
+  const [y,m,d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+function estadoClass(e) {
+  if (!e) return "badge-neutral";
+  const l = e.toLowerCase();
+  if (l.includes("rechaz") || l.includes("cancel")) return "badge-err";
+  if (l.includes("pendiente") || l.includes("process")) return "badge-warn";
+  if (l.includes("ok") || l.includes("aprob") || l.includes("complet") || l.includes("activ")) return "badge-ok";
+  return "badge-neutral";
 }
 
-/* ── Pantalla de ingreso de teléfono ── */
-function PhoneScreen({ onSubmit }) {
-  const [digits, setDigits]   = useState("");
-  const [loading, setLoading] = useState(false);
-  const inputRef              = useRef(null);
+/* ════════════ LOGIN ════════════ */
+function PasswordGate({ onAuth }) {
+  const [pwd, setPwd]     = useState("");
+  const [error, setError] = useState("");
+  const [loading, setL]   = useState(false);
 
-  useEffect(() => { inputRef.current?.focus(); }, []);
+  const handleSubmit = async (e) => {
+    e.preventDefault(); setL(true); setError("");
 
-  const handleChange = (e) => {
-    const val = e.target.value.replace(/\D/g, "").slice(0, 8);
-    setDigits(val);
-    // Auto-submit al completar 8 dígitos
-    if (val.length === 8) {
-      setTimeout(() => onSubmit(val), 80);
-    }
-  };
+    // ⚠️ CLAVE TEMPORALMENTE DESACTIVADA PARA PREVIEW
+    // Cuando tengas el GAS listo, reemplaza estas 2 líneas por el bloque comentado abajo
+    sessionStorage.setItem("zubale_panel_auth", "1");
+    onAuth();
 
-  const handleSubmit = async () => {
-    if (digits.length < 8 || loading) return;
-    setLoading(true);
-    await onSubmit(digits);
-    setLoading(false);
-  };
-
-  return (
-    <div className="phone-screen">
-      <div className="phone-card">
-        <div className="phone-card-icon">
-          <img
-            src="https://res.cloudinary.com/dc9lx1ruu/image/upload/v1775076708/1200x630wa_-_copia-removebg-preview_my7zpm.png"
-            alt="Zubale"
-            style={{ width: "64px", height: "64px", objectFit: "contain" }}
-          />
-        </div>
-        <h1 className="phone-card-title">Ingresa tu número de teléfono registrado</h1>
-        <p className="phone-card-sub">
-          Te mostraremos las salas disponibles para HOY
-        </p>
-
-        <div className="phone-input-wrap">
-          <span className="phone-prefix">569</span>
-          <input
-            ref={inputRef}
-            type="tel"
-            inputMode="numeric"
-            className="phone-input"
-            placeholder="XXXX XXXX"
-            value={digits}
-            onChange={handleChange}
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-          />
-        </div>
-
-        <button className="btn-primary" onClick={handleSubmit} disabled={digits.length < 8 || loading}>
-          {loading ? "⏳ Buscando..." : "Buscar mis salas →"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ── Pantalla de carga con barra de progreso ── */
-function LoadingScreen() {
-  const [pct, setPct] = useState(0);
-
-  useEffect(() => {
-    // Sube rápido al principio, se frena al acercarse a 90%
-    const interval = setInterval(() => {
-      setPct(prev => {
-        if (prev >= 90) { clearInterval(interval); return prev; }
-        const step = prev < 40 ? 8 : prev < 70 ? 4 : 1;
-        return Math.min(prev + step, 90);
-      });
-    }, 120);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div className="fullscreen-center">
-      <div className="status-card">
-        <div style={{ fontSize: 40, marginBottom: 16 }}>🔍</div>
-        <div className="status-title" style={{ marginBottom: 6 }}>Buscando tu perfil...</div>
-        <p className="status-text" style={{ marginBottom: 20 }}>
-          Verificando tu número y cargando las salas disponibles.
-        </p>
-
-        {/* Barra de progreso */}
-        <div style={{
-          width: "100%",
-          background: "#E5E7EB",
-          borderRadius: 99,
-          height: 10,
-          overflow: "hidden",
-          marginBottom: 10
-        }}>
-          <div style={{
-            height: "100%",
-            width: pct + "%",
-            background: "linear-gradient(90deg, #1557D6, #1B4FFF)",
-            borderRadius: 99,
-            transition: "width 0.15s ease"
-          }} />
-        </div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#1557D6" }}>{pct}%</div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Número no encontrado ── */
-function NotFoundScreen({ digits, onRetry }) {
-  return (
-    <div className="fullscreen-center">
-      <div className="status-card">
-        <div className="status-icon">🔍</div>
-        <div className="status-title">Número no encontrado</div>
-        <p className="status-text">
-          El número <strong style={{ color: "#1A2340" }}>569{digits}</strong> no fue encontrado.<br/><br/>
-          Verifica que el número ingresado esté correcto.
-        </p>
-        <button className="btn-primary" onClick={onRetry}>Volver a intentar</button>
-      </div>
-    </div>
-  );
-}
-
-/* ── Usuario bloqueado (Tarjeta Negra / Roja) ── */
-function BlockedScreen({ onRetry }) {
-  return (
-    <div className="fullscreen-center">
-      <div className="status-card">
-        <div className="status-icon">🚫</div>
-        <div className="status-title">Sin citas disponibles</div>
-        <p className="status-text">
-          No tenemos citas disponibles para ti.<br/><br/>
-          Vuelve a intentarlo más tarde.
-        </p>
-        <button className="btn-primary" onClick={onRetry}>Volver</button>
-      </div>
-    </div>
-  );
-}
-
-/* ── Error de conexión ── */
-function ErrorScreen({ onRetry }) {
-  return (
-    <div className="fullscreen-center">
-      <div className="status-card">
-        <div className="status-icon">⚠️</div>
-        <div className="status-title">Error de conexión</div>
-        <p className="status-text">No pudimos conectarnos al servidor. Revisá tu conexión e intentá de nuevo.</p>
-        <button className="btn-primary" onClick={onRetry}>Reintentar</button>
-      </div>
-    </div>
-  );
-}
-
-/* ── Tarjeta de tienda ── */
-function StoreCard({ store, onSelect }) {
-  return (
-    <div className="store-card" onClick={() => onSelect(store)}>
-      <div className="store-icon-wrap">
-        <span className="store-emoji">{store.emoji}</span>
-      </div>
-      <div className="store-name">{store.name}</div>
-      <span className="store-cta">Reservar →</span>
-    </div>
-  );
-}
-
-/* ── Modal de confirmación (sin re-ingresar teléfono) ── */
-function Modal({ store, userInfo, digits, onClose, onSubmit }) {
-  const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    const handleKey = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, []);
-
-  const handleConfirm = async () => {
-    setSubmitting(true);
+    /* ── REACTIVAR CUANDO EL GAS ESTÉ CONFIGURADO ──────────────
     try {
-      await fetch(GAS_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({
-          local:    store.name,
-          telefono: "569" + digits,
-          rol:      userInfo.rol,
-          cliente:  userInfo.cliente,
-          fecha:    new Date().toLocaleString("es-CL"),
-          source:   "BD"
-        })
-      });
-    } catch (e) {
-      console.warn("Error al enviar:", e.message);
-    }
-    setSubmitting(false);
-    onSubmit(store);
+      const res = await fetch(`${GAS_URL}?action=checkPassword&pwd=${encodeURIComponent(pwd)}`).then(r=>r.json());
+      if (res.status === "ok") { sessionStorage.setItem("zubale_panel_auth","1"); onAuth(); }
+      else setError("Clave incorrecta. Intenta de nuevo.");
+    } catch { setError("Error de conexión. Verifica que el GAS esté activo."); }
+    setL(false);
+    ─────────────────────────────────────────────────────────── */
   };
 
   return (
-    <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
-        <div className="modal-header">
-          <div className="modal-store-icon">{store.emoji}</div>
-          <div className="modal-title">{store.name}</div>
-          <div className="modal-subtitle">{userInfo.rol} · {userInfo.cliente}</div>
+    <div className="auth-layout">
+      {/* Panel izquierdo – azul Zubale */}
+      <div className="auth-left">
+        <img className="auth-left-logo" src="https://client-portal.zenith.zubale.com/auth/images/logo.svg" alt="Zubale" />
+        <div className="auth-left-title">Dashboard de operaciones</div>
+        <div className="auth-left-sub">Gestión integral de reposición</div>
+      </div>
+
+      {/* Panel derecho – formulario */}
+      <div className="auth-right">
+        <div className="auth-form-wrap">
+          <div className="auth-form-title">Accede a tu cuenta</div>
+          <form onSubmit={handleSubmit}>
+            <label className="auth-label">Contraseña</label>
+            <input type="password" className="auth-input" placeholder="Ingresa tu contraseña"
+              value={pwd} onChange={e=>setPwd(e.target.value)} autoFocus />
+            {error && <div className="auth-error">{error}</div>}
+            <button type="submit" className="auth-btn" disabled={loading}>
+              {loading ? "Verificando..." : "Iniciar sesión"}
+            </button>
+          </form>
         </div>
+      </div>
+    </div>
+  );
+}
 
-        <div className="modal-body">
-          <div className="warn-box" style={{ marginBottom: 0 }}>
-            <span className="warn-box-icon">⚠️</span>
-            <span className="warn-box-text">
-              Al confirmar quedará registrada tu disponibilidad de hoy en <strong>{store.name}</strong>. Asegurate de poder asistir.
-            </span>
-          </div>
-
-          <div className="confirm-detail">
-            <strong>{userInfo.rol}</strong> · <strong>{userInfo.cliente}</strong><br/>
-            Teléfono: <strong>569{digits}</strong>
-          </div>
-
-          <button className="btn-primary" onClick={handleConfirm} disabled={submitting}>
-            {submitting ? "⏳ Enviando..." : "✅ Confirmar asistencia"}
+/* ════════════ SIDEBAR ════════════ */
+function Sidebar({ active, onSelect, onLogout }) {
+  const items = [
+    { id:"dashboard",   label:"Dashboard" },
+    { id:"solicitudes", label:"Solicitudes" },
+    { id:"reposicion",  label:"Reposición" },
+    { id:"avance",      label:"Avance" },
+  ];
+  return (
+    <aside className="sidebar">
+      <div className="sidebar-logo">
+        <img src="https://client-portal.zenith.zubale.com/auth/images/logo.svg" alt="Zubale" />
+      </div>
+      <nav className="sidebar-nav">
+        {items.map(it => (
+          <button key={it.id}
+            className={`sidebar-item${active===it.id?" active":""}${it.soon?" disabled":""}`}
+            onClick={() => !it.soon && onSelect(it.id)}>
+            {it.label}
+            {it.soon && <span style={{marginLeft:"auto",fontSize:10,opacity:.7}}>Pronto</span>}
           </button>
-          <button className="btn-secondary" onClick={onClose}>Cancelar</button>
+        ))}
+      </nav>
+      <div className="sidebar-bottom">
+        <button className="sidebar-logout" onClick={onLogout}>Logout</button>
+      </div>
+    </aside>
+  );
+}
+
+/* ════════════ TABLA CON PAGINACIÓN ════════════ */
+function DataTable({ columns, rows, loading, emptyText }) {
+  const [page, setPage] = useState(1);
+  useEffect(() => setPage(1), [rows.length]);
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const sliced = rows.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
+  const start = rows.length === 0 ? 0 : (page-1)*PAGE_SIZE+1;
+  const end   = Math.min(page*PAGE_SIZE, rows.length);
+
+  return (
+    <div className="table-card">
+      {loading ? <div className="loading-txt">Cargando datos...</div> : (
+        <table className="data-table">
+          <thead>
+            <tr>{columns.map(c=><th key={c.key}>{c.label}</th>)}</tr>
+          </thead>
+          <tbody>
+            {sliced.length === 0
+              ? <tr><td colSpan={columns.length} className="empty-td">{emptyText || "No hay datos disponibles"}</td></tr>
+              : sliced.map((r,i) => (
+                <tr key={i}>{columns.map(c=><td key={c.key}>{c.render ? c.render(r[c.key], r) : r[c.key]}</td>)}</tr>
+              ))
+            }
+          </tbody>
+        </table>
+      )}
+      <div className="pagination">
+        <span>Mostrando {start}-{end} de {rows.length}</span>
+        <div className="pag-btns">
+          <button className="pag-btn" disabled={page<=1} onClick={()=>setPage(p=>p-1)}>‹</button>
+          <button className="pag-btn" disabled={page>=totalPages} onClick={()=>setPage(p=>p+1)}>›</button>
         </div>
       </div>
     </div>
   );
 }
 
-/* ── Toast de éxito ── */
-function Toast({ store }) {
-  return (
-    <div className="toast">
-      <div className="toast-icon">🎉</div>
-      <div className="toast-title">¡Tu Registro Fue enviado!</div>
-      <div className="toast-msg">
-        Tu disponibilidad de asistencia en <strong>{store.name}</strong> quedó registrada. Preparate para asistir! Recibirás confirmación previamente por whatsapp.
-      </div>
-    </div>
-  );
-}
+/* ════════════ SOLICITUDES ════════════ */
+function SolicitudesTab({ fecha, autoRefresh }) {
+  const [all, setAll]     = useState([]);
+  const [loading, setL]   = useState(true);
+  const [srchLocal, setSL]= useState("");
+  const [fBrand, setFB]   = useState("");
+  const timerRef          = useRef(null);
 
-/* ── Ya registrado hoy ── */
-function AlreadyRegisteredScreen({ onRetry }) {
-  return (
-    <section className="hero" style={{ textAlign:"center", padding:"48px 24px" }}>
-      <div style={{ fontSize:64, marginBottom:16 }}>✅</div>
-      <h2 style={{ margin:"0 0 8px", color:"#ffffff" }}>Ya registraste hoy</h2>
-      <p style={{ color:"#ffffff", marginBottom:28 }}>
-        Tu disponibilidad ya fue enviada para hoy. No es necesario registrarte de nuevo.
-      </p>
-      <button className="btn-secondary" onClick={onRetry} style={{ maxWidth:260 }}>
-        Volver al inicio
-      </button>
-    </section>
-  );
-}
+  const load = useCallback((force = false) => {
+    if (!force && _cache.solicitudes) { setAll(_cache.solicitudes); setL(false); return; }
+    setL(true);
+    fetch(`${GAS_URL}?action=getSolicitudes`).then(r=>r.json())
+      .then(res=>{ _cache.solicitudes = res.data||[]; setAll(_cache.solicitudes); setL(false); })
+      .catch(()=>setL(false));
+  }, []);
 
-/* ── Skeleton de carga ── */
-function SkeletonGrid() {
+  useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    clearInterval(timerRef.current);
+    if (autoRefresh) timerRef.current = setInterval(() => load(true), 5 * 60 * 1000);
+    return () => clearInterval(timerRef.current);
+  }, [autoRefresh, load]);
+
+  const fechaDMY = isoToDMY(fecha);
+  const brands   = useMemo(() => [...new Set(all.map(r=>r.brand).filter(Boolean))].sort(), [all]);
+  const filtered = useMemo(() => all.filter(r => {
+    if (fecha && r.fecha !== fechaDMY) return false;
+    if (srchLocal && !r.local.toLowerCase().includes(srchLocal.toLowerCase())) return false;
+    if (fBrand && r.brand !== fBrand) return false;
+    return true;
+  }), [all, fecha, fechaDMY, srchLocal, fBrand]);
+
+  const cols = [
+    { key:"brand",    label:"Brand",    render: v => <span className="badge badge-brand">{v}</span> },
+    { key:"local",    label:"Local" },
+    { key:"solicitud",label:"Solicitud" },
+    { key:"approver", label:"Approver", render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
+    { key:"estado",   label:"Estado",   render: v => <span className={`badge ${estadoClass(v)}`}>{v||"–"}</span> },
+  ];
+
   return (
     <div>
-      <div style={{ display:"flex", alignItems:"center", marginBottom:6 }}>
-        <div className="skeleton-block" style={{ width:200, height:20, borderRadius:6 }} />
-        <div className="skeleton-block" style={{ width:70, height:20, borderRadius:99, marginLeft:10 }} />
+      <div className="content-header">
+        <div className="content-title">Solicitudes</div>
+        <div className="content-sub">Listado de solicitudes registradas</div>
       </div>
-      <div className="skeleton-block" style={{ width:260, height:15, borderRadius:6, marginBottom:24 }} />
-      <div className="cards-grid">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="skeleton-card">
-            <div className="skeleton-block" style={{ width:56, height:56, borderRadius:14 }} />
-            <div className="skeleton-block" style={{ width:"75%", height:14, borderRadius:6 }} />
-            <div className="skeleton-block" style={{ width:"45%", height:12, borderRadius:6 }} />
-          </div>
-        ))}
+      <div className="filters-row">
+        <div className="search-wrap">
+          <span className="search-icon">⌕</span>
+          <input className="filter-input" placeholder="Buscar por local..."
+            value={srchLocal} onChange={e=>setSL(e.target.value)} />
+        </div>
+        <select className="filter-select" value={fBrand} onChange={e=>setFB(e.target.value)}>
+          <option value="">Brand ▾</option>
+          {brands.map(b=><option key={b} value={b}>{b}</option>)}
+        </select>
+        <button className="icon-btn" onClick={()=>load(true)} title="Actualizar">↺</button>
       </div>
+      <DataTable columns={cols} rows={filtered} loading={loading} />
     </div>
   );
 }
 
-/* ══════════════════════════════════════════════════════════
-   APP PRINCIPAL
-   ══════════════════════════════════════════════════════════ */
-function App() {
-  // "phone" | "loading" | "results" | "already_registered" | "blocked" | "not_found" | "error"
-  const [phase, setPhase]         = useState("phone");
-  const [digits, setDigits]       = useState(""); // 8 dígitos ingresados
-  const [userInfo, setUserInfo]   = useState(null); // { rol, cliente }
-  const [myStores, setMyStores]   = useState([]);
-  const [selected, setSelected]   = useState(null);
-  const [toast, setToast]         = useState(null);
+/* ════════════ REPOSICIÓN ════════════ */
+function ReposicionTab({ fecha, autoRefresh }) {
+  const [all, setAll]     = useState([]);
+  const [loading, setL]   = useState(true);
+  const [srchLocal, setSL]= useState("");
+  const [fBrand, setFB]   = useState("");
+  const timerRef          = useRef(null);
 
-  const handlePhoneSubmit = async (phoneDigits) => {
-    setDigits(phoneDigits);
-    setPhase("loading");
+  const load = useCallback((force = false) => {
+    if (!force && _cache.agendados) { setAll(_cache.agendados); setL(false); return; }
+    setL(true);
+    fetch(`${GAS_URL}?action=getAgendados`).then(r=>r.json())
+      .then(res=>{ _cache.agendados = res.data||[]; setAll(_cache.agendados); setL(false); })
+      .catch(()=>setL(false));
+  }, []);
 
-    try {
-      // Una sola llamada que devuelve usuario + locales filtrados juntos
-      const res = await fetch(GAS_URL + "?action=getUserAndStores&phone=569" + phoneDigits)
-        .then(r => r.json());
+  useEffect(() => { load(); }, [load]);
 
-      if (res.status === "ok") {
-        setUserInfo({ rol: res.rol, cliente: res.cliente });
-        if (res.yaRegistrado) {
-          setPhase("already_registered");
-          return;
-        }
-        setMyStores((res.stores || []).map((name, i) => ({
-          id: i, name, emoji: ROLE_EMOJI[res.rol] || "🏪"
-        })));
-        setPhase("results");
-      } else if (res.status === "blocked") {
-        setPhase("blocked");
-      } else if (res.status === "not_found") {
-        setPhase("not_found");
-      } else {
-        setPhase("error");
-      }
-    } catch {
-      setPhase("error");
-    }
-  };
+  useEffect(() => {
+    clearInterval(timerRef.current);
+    if (autoRefresh) timerRef.current = setInterval(() => load(true), 5 * 60 * 1000);
+    return () => clearInterval(timerRef.current);
+  }, [autoRefresh, load]);
 
-  const handleConfirm = (store) => {
-    setSelected(null);
-    setToast(store);
-    setTimeout(() => setToast(null), 10000);
-    setTimeout(() => setPhase("already_registered"), 10500);
-  };
+  const fechaDMY = isoToDMY(fecha);
+  const brands   = useMemo(() => [...new Set(all.map(r=>r.brand).filter(Boolean))].sort(), [all]);
+  const filtered = useMemo(() => all.filter(r => {
+    if (!r.estado) return false; // Solo filas con col H (Estado) completada
+    if (fecha && r.fecha !== fechaDMY) return false;
+    if (srchLocal && !r.local.toLowerCase().includes(srchLocal.toLowerCase())) return false;
+    if (fBrand && r.brand !== fBrand) return false;
+    return true;
+  }), [all, fecha, fechaDMY, srchLocal, fBrand]);
 
-  const handleRetry = () => {
-    setPhase("phone");
-    setUserInfo(null);
-    setSelected(null);
-  };
+  const cols = [
+    { key:"brand",         label:"Brand",         render: v => <span className="badge badge-brand">{v}</span> },
+    { key:"local",         label:"Local" },
+    { key:"rol",           label:"Rol" },
+    { key:"telefono",      label:"Teléfono" },
+    { key:"nombre",        label:"Nombre",        render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
+    { key:"estado",        label:"Estado",        render: v => <span className={`badge ${estadoClass(v)}`}>{v}</span> },
+    { key:"observaciones", label:"Observaciones", render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
+  ];
 
   return (
-    <>
-      <Header userInfo={phase === "results" ? userInfo : null} />
+    <div>
+      <div className="content-header">
+        <div className="content-title">Reposición</div>
+        <div className="content-sub">Usuarios agendados a través de la web</div>
+      </div>
+      <div className="stat-cards">
+        <div className="stat-card">
+          <div className="stat-value">{filtered.length}</div>
+          <div className="stat-label">Total usuarios agendados</div>
+        </div>
+      </div>
+      <div className="filters-row">
+        <div className="search-wrap">
+          <span className="search-icon">⌕</span>
+          <input className="filter-input" placeholder="Buscar por local..."
+            value={srchLocal} onChange={e=>setSL(e.target.value)} />
+        </div>
+        <select className="filter-select" value={fBrand} onChange={e=>setFB(e.target.value)}>
+          <option value="">Brand ▾</option>
+          {brands.map(b=><option key={b} value={b}>{b}</option>)}
+        </select>
+        <button className="icon-btn" onClick={()=>load(true)} title="Actualizar">↺</button>
+      </div>
+      <DataTable columns={cols} rows={filtered} loading={loading} />
+    </div>
+  );
+}
 
-      {phase === "phone"     && <PhoneScreen onSubmit={handlePhoneSubmit} />}
-      {phase === "loading"   && <LoadingScreen />}
-      {phase === "blocked"          && <BlockedScreen onRetry={handleRetry} />}
-      {phase === "already_registered" && <AlreadyRegisteredScreen onRetry={handleRetry} />}
-      {phase === "not_found" && <NotFoundScreen digits={digits} onRetry={handleRetry} />}
-      {phase === "error"     && <ErrorScreen onRetry={handleRetry} />}
+/* ════════════ AVANCE ════════════ */
+function AvanceTab({ fecha, autoRefresh }) {
+  const [all, setAll]     = useState([]);
+  const [loading, setL]   = useState(true);
+  const [srchSala, setSS] = useState("");
+  const [fBrand, setFB]   = useState("");
+  const [fRol, setFR]     = useState("");
+  const timerRef          = useRef(null);
 
-      {phase === "results" && (
-        <>
-          <section className="hero">
-            <h1>Salas disponibles para ti hoy</h1>
-            <p>Como <strong>{userInfo?.rol}</strong> en <strong>{userInfo?.cliente}</strong>, estas son tus opciones.</p>
-          </section>
+  const load = useCallback((force = false) => {
+    if (!force && _cache.avance) { setAll(_cache.avance); setL(false); return; }
+    setL(true);
+    fetch(`${GAS_URL}?action=getAvance`).then(r=>r.json())
+      .then(res=>{ _cache.avance = res.data||[]; setAll(_cache.avance); setL(false); })
+      .catch(()=>setL(false));
+  }, []);
 
-          <main className="main">
-            <>
-              <div style={{ display:"flex", alignItems:"center", marginBottom:4 }}>
-                <span className="section-title">Locales disponibles</span>
-              </div>
-              <p className="section-sub">Selecciona el local donde quieres asistir hoy.</p>
+  useEffect(() => { load(); }, [load]);
 
-              {myStores.length > 0 ? (
-                <div className="cards-grid">
-                  {myStores.map(store => (
-                    <StoreCard key={store.id} store={store} onSelect={setSelected} />
-                  ))}
-                </div>
-              ) : (
-                <div className="empty">
-                  <div className="empty-icon">🔍</div>
-                  <div className="empty-title">Sin locales disponibles hoy</div>
-                  <div className="empty-text">No hay salas asignadas para {userInfo?.rol} en {userInfo?.cliente} hoy. Vuelve más tarde.</div>
-                </div>
-              )}
+  useEffect(() => {
+    clearInterval(timerRef.current);
+    if (autoRefresh) timerRef.current = setInterval(() => load(true), 5 * 60 * 1000);
+    return () => clearInterval(timerRef.current);
+  }, [autoRefresh, load]);
 
-              <div className="warn-box" style={{ marginTop: 28 }}>
-                <span className="warn-box-icon">⚠️</span>
-                <span className="warn-box-text">
-                  Recuerda que es importante que para seleccionar una sala, te encuentres previamente <strong>capacitado</strong>.
-                </span>
-              </div>
-            </>
-          </main>
+  const fechaDMY = isoToDMY(fecha);
+  const brands   = useMemo(() => [...new Set(all.map(r=>r.brand).filter(Boolean))].sort(), [all]);
+  const roles    = useMemo(() => [...new Set(all.map(r=>r.rol).filter(Boolean))].sort(), [all]);
+  const filtered = useMemo(() => all.filter(r => {
+    if (fecha && r.fecha !== fechaDMY) return false;
+    if (srchSala && !r.sala.toLowerCase().includes(srchSala.toLowerCase())) return false;
+    if (fBrand && r.brand !== fBrand) return false;
+    if (fRol && r.rol !== fRol) return false;
+    return true;
+  }), [all, fecha, fechaDMY, srchSala, fBrand, fRol]);
 
-          <footer className="footer">© 2025 Zubale</footer>
-        </>
-      )}
+  const cols = [
+    { key:"fecha",          label:"Fecha" },
+    { key:"brand",          label:"Brand",               render: v => <span className="badge badge-brand">{v}</span> },
+    { key:"sala",           label:"Sala" },
+    { key:"rol",            label:"Rol" },
+    { key:"pushNoShow",     label:"Push No Show",        render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
+    { key:"pushBusqueda",   label:"Push Búsqueda activa",render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
+    { key:"totalAlcanzado", label:"Total Alcanzado",     render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
+  ];
 
-      {selected && (
-        <Modal
-          store={selected}
-          userInfo={userInfo}
-          digits={digits}
-          onClose={() => setSelected(null)}
-          onSubmit={handleConfirm}
-        />
-      )}
+  return (
+    <div>
+      <div className="content-header">
+        <div className="content-title">Avance</div>
+        <div className="content-sub">Seguimiento de avance por sala y rol</div>
+      </div>
+      <div className="filters-row">
+        <div className="search-wrap">
+          <span className="search-icon">⌕</span>
+          <input className="filter-input" placeholder="Buscar por sala..."
+            value={srchSala} onChange={e=>setSS(e.target.value)} />
+        </div>
+        <select className="filter-select" value={fBrand} onChange={e=>setFB(e.target.value)}>
+          <option value="">Brand ▾</option>
+          {brands.map(b=><option key={b} value={b}>{b}</option>)}
+        </select>
+        <select className="filter-select" value={fRol} onChange={e=>setFR(e.target.value)}>
+          <option value="">Rol ▾</option>
+          {roles.map(r=><option key={r} value={r}>{r}</option>)}
+        </select>
+        <button className="icon-btn" onClick={()=>load(true)} title="Actualizar">↺</button>
+      </div>
+      <DataTable columns={cols} rows={filtered} loading={loading} emptyText="Sin datos de avance para el período seleccionado" />
+    </div>
+  );
+}
 
-      {toast && <Toast store={toast} />}
-    </>
+/* ════════════ APP ════════════ */
+function App() {
+  const [auth, setAuth]         = useState(sessionStorage.getItem("zubale_panel_auth")==="1");
+  const [menu, setMenu]         = useState("dashboard");
+  const [fecha, setFecha]       = useState(todayISO());
+  const [autoRefresh, setAR]    = useState(false);
+
+  const handleLogout = () => { sessionStorage.removeItem("zubale_panel_auth"); setAuth(false); };
+  if (!auth) return <PasswordGate onAuth={()=>setAuth(true)} />;
+
+  return (
+    <div className="layout">
+      <Sidebar active={menu} onSelect={setMenu} onLogout={handleLogout} />
+      <div className="main">
+        <header className="main-header">
+          <div className="header-titles">
+            <div className="header-title">Dashboard de operaciones</div>
+            <div className="header-sub">Gestión integral de reposición</div>
+          </div>
+          <div className="header-right">
+            {/* Fecha global */}
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:12,color:"#94a3b8",fontWeight:500}}>Fecha</span>
+              <input type="date" style={{padding:"5px 8px",border:"1.5px solid #e2e8f0",borderRadius:6,fontSize:12,outline:"none"}}
+                value={fecha} onChange={e=>setFecha(e.target.value)} />
+              {fecha && <button className="icon-btn" style={{width:26,height:26,fontSize:11}} onClick={()=>setFecha("")} title="Todas las fechas">✕</button>}
+            </div>
+            {/* Auto-refresh toggle */}
+            <div className="auto-refresh-toggle" onClick={()=>setAR(v=>!v)} title="Auto-actualizar cada 5 minutos">
+              <div className={`toggle-dot${autoRefresh?" on":""}`} />
+              <span>Auto ↺{autoRefresh && <span className="refresh-indicator">· 5 min</span>}</span>
+            </div>
+            <img className="header-logo" src="https://client-portal.zenith.zubale.com/auth/images/logo.svg" alt="Zubale" />
+          </div>
+        </header>
+
+        <div className="content">
+          {menu === "dashboard"   && (
+            <div className="placeholder-tab">
+              <div style={{fontSize:48}}>🚧</div>
+              <h3>Próximamente</h3>
+              <p>Esta sección estará disponible pronto.</p>
+            </div>
+          )}
+          {menu === "solicitudes" && <SolicitudesTab fecha={fecha} autoRefresh={autoRefresh} />}
+          {menu === "reposicion"  && <ReposicionTab  fecha={fecha} autoRefresh={autoRefresh} />}
+          {menu === "avance"      && <AvanceTab      fecha={fecha} autoRefresh={autoRefresh} />}
+        </div>
+      </div>
+    </div>
   );
 }
 

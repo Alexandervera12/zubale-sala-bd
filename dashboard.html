@@ -470,6 +470,12 @@ function ReposicionTab({ fecha, autoRefresh }) {
           <div className="stat-value">{filtered.length}</div>
           <div className="stat-label">Total usuarios agendados</div>
         </div>
+        {["Shopper","Picker","Driver"].map(rol => (
+          <div className="stat-card" key={rol}>
+            <div className="stat-value">{filtered.filter(r=>r.rol===rol).length}</div>
+            <div className="stat-label">{rol}</div>
+          </div>
+        ))}
       </div>
       <div className="filters-row">
         <div className="search-wrap">

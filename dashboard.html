@@ -114,11 +114,11 @@
     .table-card { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.07); overflow: hidden; }
     .data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
     .data-table th {
-      padding: 13px 16px; text-align: left;
+      padding: 13px 16px; text-align: center;
       font-size: 13px; font-weight: 700; color: #0143f9;
       border-bottom: 1.5px solid #e2e8f0; background: #fff;
     }
-    .data-table td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+    .data-table td { padding: 12px 16px; text-align: center; border-bottom: 1px solid #f1f5f9; color: #334155; }
     .data-table tbody tr:hover { background: #f8faff; }
     .data-table tbody tr:last-child td { border-bottom: none; }
     .empty-td { text-align: center; color: #94a3b8; padding: 52px !important; font-size: 14px; }
@@ -206,14 +206,11 @@ const { useState, useEffect, useMemo, useCallback, useRef } = React;
 /* ══════════════════════════════════════════════════════
    ⚠️  REEMPLAZA CON TU URL DEL GAS
    ══════════════════════════════════════════════════════ */
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzqHnM4KVPz9tBJnsMLWrExjWydyOZ4Mcix4qAVFZ0B7-AjLzFYtP4vNKJtlKi3iqY/exec";
+const GAS_URL = "TU_GAS_URL_AQUI";
 
 const PAGE_SIZE = 10;
 
-/* ── Caché global para no recargar al cambiar de menú ── */
-const _cache = {};
-
-/* ── Helpers de fecha ── */
+/* ── Helpers ── */
 function todayISO() {
   const n = new Date();
   return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`;
@@ -228,9 +225,11 @@ function estadoClass(e) {
   const l = e.toLowerCase();
   if (l.includes("rechaz") || l.includes("cancel")) return "badge-err";
   if (l.includes("pendiente") || l.includes("process")) return "badge-warn";
-  if (l.includes("ok") || l.includes("aprob") || l.includes("complet") || l.includes("activ")) return "badge-ok";
+  if (l.includes("ok") || l.includes("aprob") || l.includes("complet") || l.includes("activ") || l.includes("camino") || l.includes("asiste")) return "badge-ok";
   return "badge-neutral";
 }
+// Comparación case-insensitive para matching entre sheets
+function eqCI(a, b) { return String(a||"").toLowerCase().trim() === String(b||"").toLowerCase().trim(); }
 
 /* ════════════ LOGIN ════════════ */
 function PasswordGate({ onAuth }) {
@@ -240,12 +239,9 @@ function PasswordGate({ onAuth }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault(); setL(true); setError("");
-
     // ⚠️ CLAVE TEMPORALMENTE DESACTIVADA PARA PREVIEW
-    // Cuando tengas el GAS listo, reemplaza estas 2 líneas por el bloque comentado abajo
     sessionStorage.setItem("zubale_panel_auth", "1");
     onAuth();
-
     /* ── REACTIVAR CUANDO EL GAS ESTÉ CONFIGURADO ──────────────
     try {
       const res = await fetch(`${GAS_URL}?action=checkPassword&pwd=${encodeURIComponent(pwd)}`).then(r=>r.json());
@@ -258,14 +254,11 @@ function PasswordGate({ onAuth }) {
 
   return (
     <div className="auth-layout">
-      {/* Panel izquierdo – azul Zubale */}
       <div className="auth-left">
         <img className="auth-left-logo" src="https://client-portal.zenith.zubale.com/auth/images/logo.svg" alt="Zubale" />
         <div className="auth-left-title">Dashboard de operaciones</div>
         <div className="auth-left-sub">Gestión integral de reposición</div>
       </div>
-
-      {/* Panel derecho – formulario */}
       <div className="auth-right">
         <div className="auth-form-wrap">
           <div className="auth-form-title">Accede a tu cuenta</div>
@@ -300,10 +293,9 @@ function Sidebar({ active, onSelect, onLogout }) {
       <nav className="sidebar-nav">
         {items.map(it => (
           <button key={it.id}
-            className={`sidebar-item${active===it.id?" active":""}${it.soon?" disabled":""}`}
-            onClick={() => !it.soon && onSelect(it.id)}>
+            className={`sidebar-item${active===it.id?" active":""}`}
+            onClick={() => onSelect(it.id)}>
             {it.label}
-            {it.soon && <span style={{marginLeft:"auto",fontSize:10,opacity:.7}}>Pronto</span>}
           </button>
         ))}
       </nav>
@@ -320,21 +312,19 @@ function DataTable({ columns, rows, loading, emptyText }) {
   useEffect(() => setPage(1), [rows.length]);
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const sliced = rows.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
-  const start = rows.length === 0 ? 0 : (page-1)*PAGE_SIZE+1;
-  const end   = Math.min(page*PAGE_SIZE, rows.length);
+  const start  = rows.length === 0 ? 0 : (page-1)*PAGE_SIZE+1;
+  const end    = Math.min(page*PAGE_SIZE, rows.length);
 
   return (
     <div className="table-card">
       {loading ? <div className="loading-txt">Cargando datos...</div> : (
         <table className="data-table">
-          <thead>
-            <tr>{columns.map(c=><th key={c.key}>{c.label}</th>)}</tr>
-          </thead>
+          <thead><tr>{columns.map(c=><th key={c.key}>{c.label}</th>)}</tr></thead>
           <tbody>
             {sliced.length === 0
-              ? <tr><td colSpan={columns.length} className="empty-td">{emptyText || "No hay datos disponibles"}</td></tr>
-              : sliced.map((r,i) => (
-                <tr key={i}>{columns.map(c=><td key={c.key}>{c.render ? c.render(r[c.key], r) : r[c.key]}</td>)}</tr>
+              ? <tr><td colSpan={columns.length} className="empty-td">{emptyText||"No hay datos disponibles"}</td></tr>
+              : sliced.map((r,i)=>(
+                <tr key={i}>{columns.map(c=><td key={c.key}>{c.render ? c.render(r[c.key],r) : r[c.key]}</td>)}</tr>
               ))
             }
           </tbody>
@@ -352,37 +342,18 @@ function DataTable({ columns, rows, loading, emptyText }) {
 }
 
 /* ════════════ SOLICITUDES ════════════ */
-function SolicitudesTab({ fecha, autoRefresh }) {
-  const [all, setAll]     = useState([]);
-  const [loading, setL]   = useState(true);
-  const [srchLocal, setSL]= useState("");
-  const [fBrand, setFB]   = useState("");
-  const timerRef          = useRef(null);
-
-  const load = useCallback((force = false) => {
-    if (!force && _cache.solicitudes) { setAll(_cache.solicitudes); setL(false); return; }
-    setL(true);
-    fetch(`${GAS_URL}?action=getSolicitudes`).then(r=>r.json())
-      .then(res=>{ _cache.solicitudes = res.data||[]; setAll(_cache.solicitudes); setL(false); })
-      .catch(()=>setL(false));
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  useEffect(() => {
-    clearInterval(timerRef.current);
-    if (autoRefresh) timerRef.current = setInterval(() => load(true), 5 * 60 * 1000);
-    return () => clearInterval(timerRef.current);
-  }, [autoRefresh, load]);
+function SolicitudesTab({ data, loading, fecha, onRefresh }) {
+  const [srchLocal, setSL] = useState("");
+  const [fBrand, setFB]    = useState("");
 
   const fechaDMY = isoToDMY(fecha);
-  const brands   = useMemo(() => [...new Set(all.map(r=>r.brand).filter(Boolean))].sort(), [all]);
-  const filtered = useMemo(() => all.filter(r => {
+  const brands   = useMemo(() => [...new Set(data.map(r=>r.brand).filter(Boolean))].sort(), [data]);
+  const filtered = useMemo(() => data.filter(r => {
     if (fecha && r.fecha !== fechaDMY) return false;
     if (srchLocal && !r.local.toLowerCase().includes(srchLocal.toLowerCase())) return false;
     if (fBrand && r.brand !== fBrand) return false;
     return true;
-  }), [all, fecha, fechaDMY, srchLocal, fBrand]);
+  }), [data, fecha, fechaDMY, srchLocal, fBrand]);
 
   const cols = [
     { key:"brand",    label:"Brand",    render: v => <span className="badge badge-brand">{v}</span> },
@@ -408,7 +379,7 @@ function SolicitudesTab({ fecha, autoRefresh }) {
           <option value="">Brand ▾</option>
           {brands.map(b=><option key={b} value={b}>{b}</option>)}
         </select>
-        <button className="icon-btn" onClick={()=>load(true)} title="Actualizar">↺</button>
+        <button className="icon-btn" onClick={onRefresh} title="Actualizar">↺</button>
       </div>
       <DataTable columns={cols} rows={filtered} loading={loading} />
     </div>
@@ -416,38 +387,19 @@ function SolicitudesTab({ fecha, autoRefresh }) {
 }
 
 /* ════════════ REPOSICIÓN ════════════ */
-function ReposicionTab({ fecha, autoRefresh }) {
-  const [all, setAll]     = useState([]);
-  const [loading, setL]   = useState(true);
-  const [srchLocal, setSL]= useState("");
-  const [fBrand, setFB]   = useState("");
-  const timerRef          = useRef(null);
-
-  const load = useCallback((force = false) => {
-    if (!force && _cache.agendados) { setAll(_cache.agendados); setL(false); return; }
-    setL(true);
-    fetch(`${GAS_URL}?action=getAgendados`).then(r=>r.json())
-      .then(res=>{ _cache.agendados = res.data||[]; setAll(_cache.agendados); setL(false); })
-      .catch(()=>setL(false));
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  useEffect(() => {
-    clearInterval(timerRef.current);
-    if (autoRefresh) timerRef.current = setInterval(() => load(true), 5 * 60 * 1000);
-    return () => clearInterval(timerRef.current);
-  }, [autoRefresh, load]);
+function ReposicionTab({ data, loading, fecha, onRefresh }) {
+  const [srchLocal, setSL] = useState("");
+  const [fBrand, setFB]    = useState("");
 
   const fechaDMY = isoToDMY(fecha);
-  const brands   = useMemo(() => [...new Set(all.map(r=>r.brand).filter(Boolean))].sort(), [all]);
-  const filtered = useMemo(() => all.filter(r => {
-    if (!r.estado) return false; // Solo filas con col H (Estado) completada
+  const brands   = useMemo(() => [...new Set(data.map(r=>r.brand).filter(Boolean))].sort(), [data]);
+  const filtered = useMemo(() => data.filter(r => {
+    if (!r.estado) return false;
     if (fecha && r.fecha !== fechaDMY) return false;
     if (srchLocal && !r.local.toLowerCase().includes(srchLocal.toLowerCase())) return false;
     if (fBrand && r.brand !== fBrand) return false;
     return true;
-  }), [all, fecha, fechaDMY, srchLocal, fBrand]);
+  }), [data, fecha, fechaDMY, srchLocal, fBrand]);
 
   const cols = [
     { key:"brand",         label:"Brand",         render: v => <span className="badge badge-brand">{v}</span> },
@@ -487,7 +439,7 @@ function ReposicionTab({ fecha, autoRefresh }) {
           <option value="">Brand ▾</option>
           {brands.map(b=><option key={b} value={b}>{b}</option>)}
         </select>
-        <button className="icon-btn" onClick={()=>load(true)} title="Actualizar">↺</button>
+        <button className="icon-btn" onClick={onRefresh} title="Actualizar">↺</button>
       </div>
       <DataTable columns={cols} rows={filtered} loading={loading} />
     </div>
@@ -495,56 +447,31 @@ function ReposicionTab({ fecha, autoRefresh }) {
 }
 
 /* ════════════ AVANCE ════════════ */
-function AvanceTab({ autoRefresh }) {
-  const [all, setAll]           = useState([]);
-  const [agendados, setAg]      = useState([]);
-  const [loading, setL]         = useState(true);
-  const [srchLocal, setSL]      = useState("");
-  const [fBrand, setFB]         = useState("");
-  const [fRol, setFR]           = useState("");
-  const timerRef                = useRef(null);
+function AvanceTab({ data, agendados, loading, fecha, onRefresh }) {
+  const [srchLocal, setSL] = useState("");
+  const [fBrand, setFB]    = useState("");
+  const [fRol, setFR]      = useState("");
 
-  const load = useCallback((force = false) => {
-    const loadAvance = (!force && _cache.avance)
-      ? Promise.resolve(_cache.avance)
-      : fetch(`${GAS_URL}?action=getAvance`).then(r=>r.json())
-          .then(res=>{ _cache.avance = res.data||[]; return _cache.avance; });
-
-    const loadAgendados = (!force && _cache.agendados)
-      ? Promise.resolve(_cache.agendados)
-      : fetch(`${GAS_URL}?action=getAgendados`).then(r=>r.json())
-          .then(res=>{ _cache.agendados = res.data||[]; return _cache.agendados; });
-
-    setL(true);
-    Promise.all([loadAvance, loadAgendados])
-      .then(([av, ag]) => { setAll(av); setAg(ag); setL(false); })
-      .catch(() => setL(false));
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  useEffect(() => {
-    clearInterval(timerRef.current);
-    if (autoRefresh) timerRef.current = setInterval(() => load(true), 5 * 60 * 1000);
-    return () => clearInterval(timerRef.current);
-  }, [autoRefresh, load]);
-
-  const brands   = useMemo(() => [...new Set(all.map(r=>r.brand).filter(Boolean))].sort(), [all]);
-  const roles    = useMemo(() => [...new Set(all.map(r=>r.rol).filter(Boolean))].sort(), [all]);
-  const filtered = useMemo(() => all.filter(r => {
+  const fechaDMY = isoToDMY(fecha);
+  const brands   = useMemo(() => [...new Set(data.map(r=>r.brand).filter(Boolean))].sort(), [data]);
+  const roles    = useMemo(() => [...new Set(data.map(r=>r.rol).filter(Boolean))].sort(), [data]);
+  const filtered = useMemo(() => data.filter(r => {
+    if (fecha && r.fecha !== fechaDMY) return false;
     if (srchLocal && !r.local.toLowerCase().includes(srchLocal.toLowerCase())) return false;
-    if (fBrand && r.brand !== fBrand) return false;
-    if (fRol && r.rol !== fRol) return false;
+    if (fBrand && !eqCI(r.brand, fBrand)) return false;
+    if (fRol && !eqCI(r.rol, fRol)) return false;
     return true;
-  }), [all, srchLocal, fBrand, fRol]);
+  }), [data, fecha, fechaDMY, srchLocal, fBrand, fRol]);
 
-  // Contar usuarios únicos (por teléfono) en Reposición que coincidan brand+local+rol
-  const countAgendados = (row) => {
+  // Cruce: local + rol + misma fecha del registro (sin brand, case-insensitive)
+  const countAgendados = useCallback((row) => {
     const matches = agendados.filter(a =>
-      a.brand === row.brand && a.local === row.local && a.rol === row.rol
+      eqCI(a.local, row.local) &&
+      eqCI(a.rol,   row.rol)   &&
+      a.fecha === row.fecha
     );
     return new Set(matches.map(a => a.telefono)).size;
-  };
+  }, [agendados]);
 
   const cols = [
     { key:"brand",          label:"Brand",                render: v => <span className="badge badge-brand">{v}</span> },
@@ -553,10 +480,11 @@ function AvanceTab({ autoRefresh }) {
     { key:"pushNoShow",     label:"Push No Show",         render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
     { key:"pushBusqueda",   label:"Push Búsqueda activa", render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
     { key:"totalAlcanzado", label:"Total Alcanzado",      render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
-    { key:"_agendado",      label:"Agendado",             render: (_, row) => {
+    { key:"_ag", label:"Agendado", render: (_,row) => {
         const n = countAgendados(row);
-        return n > 0 ? <span style={{fontWeight:700, color:"#0143f9"}}>{n}</span>
-                     : <span style={{color:"#94a3b8"}}>0</span>;
+        return n > 0
+          ? <span style={{fontWeight:700,color:"#0143f9"}}>{n}</span>
+          : <span style={{color:"#94a3b8"}}>0</span>;
     }},
   ];
 
@@ -580,19 +508,55 @@ function AvanceTab({ autoRefresh }) {
           <option value="">Rol ▾</option>
           {roles.map(r=><option key={r} value={r}>{r}</option>)}
         </select>
-        <button className="icon-btn" onClick={()=>load(true)} title="Actualizar">↺</button>
+        <button className="icon-btn" onClick={onRefresh} title="Actualizar">↺</button>
       </div>
       <DataTable columns={cols} rows={filtered} loading={loading} emptyText="Sin datos de avance para el período seleccionado" />
     </div>
   );
 }
 
-/* ════════════ APP ════════════ */
+/* ════════════ APP — carga única de todos los datos ════════════ */
 function App() {
-  const [auth, setAuth]         = useState(sessionStorage.getItem("zubale_panel_auth")==="1");
-  const [menu, setMenu]         = useState("dashboard");
-  const [fecha, setFecha]       = useState(todayISO());
-  const [autoRefresh, setAR]    = useState(false);
+  const [auth, setAuth]       = useState(sessionStorage.getItem("zubale_panel_auth")==="1");
+  const [menu, setMenu]       = useState("dashboard");
+  const [fecha, setFecha]     = useState(todayISO());
+  const [autoRefresh, setAR]  = useState(false);
+
+  // Datos centralizados
+  const [agendados,   setAgendados]   = useState([]);
+  const [solicitudes, setSolicitudes] = useState([]);
+  const [avance,      setAvance]      = useState([]);
+  const [loading,     setLoading]     = useState(false);
+  const timerRef = useRef(null);
+
+  const loadAll = useCallback((force = false) => {
+    if (!auth) return;
+    const get = (action) =>
+      fetch(`${GAS_URL}?action=${action}`).then(r=>r.json())
+        .then(res => res.data || []).catch(() => []);
+
+    setLoading(true);
+    Promise.all([
+      get("getAgendados"),
+      get("getSolicitudes"),
+      get("getAvance"),
+    ]).then(([ag, sol, av]) => {
+      setAgendados(ag);
+      setSolicitudes(sol);
+      setAvance(av);
+      setLoading(false);
+    });
+  }, [auth]);
+
+  // Carga inicial al autenticarse
+  useEffect(() => { if (auth) loadAll(); }, [auth, loadAll]);
+
+  // Auto-refresh global
+  useEffect(() => {
+    clearInterval(timerRef.current);
+    if (auth && autoRefresh) timerRef.current = setInterval(loadAll, 5 * 60 * 1000);
+    return () => clearInterval(timerRef.current);
+  }, [auth, autoRefresh, loadAll]);
 
   const handleLogout = () => { sessionStorage.removeItem("zubale_panel_auth"); setAuth(false); };
   if (!auth) return <PasswordGate onAuth={()=>setAuth(true)} />;
@@ -607,14 +571,12 @@ function App() {
             <div className="header-sub">Gestión integral de reposición</div>
           </div>
           <div className="header-right">
-            {/* Fecha global */}
             <div style={{display:"flex",alignItems:"center",gap:6}}>
               <span style={{fontSize:12,color:"#94a3b8",fontWeight:500}}>Fecha</span>
-              <input type="date" style={{padding:"5px 8px",border:"1.5px solid #e2e8f0",borderRadius:6,fontSize:12,outline:"none"}}
+              <input type="date" style={{padding:"5px 8px",border:"1.5px solid #e2e8f0",borderRadius:6,fontSize:12,outline:"none",fontFamily:"Lexend,sans-serif"}}
                 value={fecha} onChange={e=>setFecha(e.target.value)} />
               {fecha && <button className="icon-btn" style={{width:26,height:26,fontSize:11}} onClick={()=>setFecha("")} title="Todas las fechas">✕</button>}
             </div>
-            {/* Auto-refresh toggle */}
             <div className="auto-refresh-toggle" onClick={()=>setAR(v=>!v)} title="Auto-actualizar cada 5 minutos">
               <div className={`toggle-dot${autoRefresh?" on":""}`} />
               <span>Auto ↺{autoRefresh && <span className="refresh-indicator">· 5 min</span>}</span>
@@ -624,16 +586,22 @@ function App() {
         </header>
 
         <div className="content">
-          {menu === "dashboard"   && (
+          {menu === "dashboard" && (
             <div className="placeholder-tab">
               <div style={{fontSize:48}}>🚧</div>
               <h3>Próximamente</h3>
               <p>Esta sección estará disponible pronto.</p>
             </div>
           )}
-          {menu === "solicitudes" && <SolicitudesTab fecha={fecha} autoRefresh={autoRefresh} />}
-          {menu === "reposicion"  && <ReposicionTab  fecha={fecha} autoRefresh={autoRefresh} />}
-          {menu === "avance"      && <AvanceTab      autoRefresh={autoRefresh} />}
+          {menu === "solicitudes" && (
+            <SolicitudesTab data={solicitudes} loading={loading} fecha={fecha} onRefresh={loadAll} />
+          )}
+          {menu === "reposicion" && (
+            <ReposicionTab data={agendados} loading={loading} fecha={fecha} onRefresh={loadAll} />
+          )}
+          {menu === "avance" && (
+            <AvanceTab data={avance} agendados={agendados} loading={loading} fecha={fecha} onRefresh={loadAll} />
+          )}
         </div>
       </div>
     </div>

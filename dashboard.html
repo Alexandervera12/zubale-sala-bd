@@ -235,8 +235,7 @@ const { useState, useEffect, useMemo, useCallback, useRef } = React;
 /* ══════════════════════════════════════════════════════
    ⚠️  REEMPLAZA CON TU URL DEL GAS
    ══════════════════════════════════════════════════════ */
-const GAS_URL             = "https://script.google.com/macros/s/AKfycbx2Sz0uDZrX1RHRuL_cqOZGNhzmvkesFtvpBTx98KzDErg7MZjoC68C63D5bt1FLRw/exec";
-const GAS_SUPPLY_BD_URL   = "https://script.google.com/macros/s/AKfycbx2Sz0uDZrX1RHRuL_cqOZGNhzmvkesFtvpBTx98KzDErg7MZjoC68C63D5bt1FLRw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbx2Sz0uDZrX1RHRuL_cqOZGNhzmvkesFtvpBTx98KzDErg7MZjoC68C63D5bt1FLRw/exec";  // ← misma URL para todo (BD + Supply)
 
 const PAGE_SIZE = 10;
 
@@ -858,8 +857,8 @@ function App() {
 
   const loadAll = useCallback((force = false) => {
     if (!auth) return;
-    const get = (action, baseUrl = GAS_URL) =>
-      fetch(`${baseUrl}?action=${action}`).then(r=>r.json())
+    const get = (action) =>
+      fetch(`${GAS_URL}?action=${action}`).then(r=>r.json())
         .then(res => res.data || []).catch(() => []);
 
     setLoading(true);
@@ -867,7 +866,7 @@ function App() {
       get("getAgendados"),
       get("getSolicitudes"),
       get("getAvance"),
-      get("getAgendadosSupply", GAS_SUPPLY_BD_URL),
+      get("getAgendadosSupply"),
     ]).then(([ag, sol, av, sup]) => {
       setAgendados(ag);
       setSolicitudes(sol);

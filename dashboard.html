@@ -284,10 +284,10 @@ function PasswordGate({ onAuth }) {
 /* ════════════ SIDEBAR ════════════ */
 function Sidebar({ active, onSelect, onLogout }) {
   const items = [
-    { id:"solicitudes", icon:"☰",  label:"Solicitudes" },
-    { id:"reposicion",  icon:"↻",  label:"Reposición" },
-    { id:"avance",      icon:"↗",  label:"Avance",    soon:true },
-    { id:"dashboard",   icon:"◈",  label:"Dashboard", soon:true },
+    { id:"solicitudes", label:"Solicitudes" },
+    { id:"reposicion",  label:"Reposición" },
+    { id:"avance",      label:"Avance",    soon:true },
+    { id:"dashboard",   label:"Dashboard", soon:true },
   ];
   return (
     <aside className="sidebar">
@@ -299,7 +299,6 @@ function Sidebar({ active, onSelect, onLogout }) {
           <button key={it.id}
             className={`sidebar-item${active===it.id?" active":""}${it.soon?" disabled":""}`}
             onClick={() => !it.soon && onSelect(it.id)}>
-            <span className="sidebar-icon">{it.icon}</span>
             {it.label}
             {it.soon && <span style={{marginLeft:"auto",fontSize:10,opacity:.7}}>Pronto</span>}
           </button>
@@ -433,6 +432,7 @@ function ReposicionTab({ fecha, autoRefresh }) {
   const fechaDMY = isoToDMY(fecha);
   const brands   = useMemo(() => [...new Set(all.map(r=>r.brand).filter(Boolean))].sort(), [all]);
   const filtered = useMemo(() => all.filter(r => {
+    if (!r.estado) return false; // Solo filas con col H (Estado) completada
     if (fecha && r.fecha !== fechaDMY) return false;
     if (srchLocal && !r.local.toLowerCase().includes(srchLocal.toLowerCase())) return false;
     if (fBrand && r.brand !== fBrand) return false;

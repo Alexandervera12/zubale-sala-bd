@@ -424,7 +424,7 @@ function ReposicionTab({ data, loading, fecha, onRefresh }) {
         </div>
         {["Shopper","Picker","Driver"].map(rol => (
           <div className="stat-card" key={rol}>
-            <div className="stat-value">{filtered.filter(r=>r.rol===rol).length}</div>
+            <div className="stat-value">{filtered.filter(r=>eqCI(r.rol,rol)).length}</div>
             <div className="stat-label">{rol}</div>
           </div>
         ))}
@@ -442,6 +442,119 @@ function ReposicionTab({ data, loading, fecha, onRefresh }) {
         <button className="icon-btn" onClick={onRefresh} title="Actualizar">↺</button>
       </div>
       <DataTable columns={cols} rows={filtered} loading={loading} />
+    </div>
+  );
+}
+
+/* ════════════ DASHBOARD OVERVIEW ════════════ */
+function DashboardTab({ agendados, solicitudes, avance, fecha }) {
+  const fechaDMY = isoToDMY(fecha);
+
+  // Reposición: agendados con estado, filtrados por fecha si hay
+  const repHoy = useMemo(() => agendados.filter(r =>
+    r.estado && (!fecha || r.fecha === fechaDMY)
+  ), [agendados, fecha, fechaDMY]);
+
+  // Solicitudes filtradas por fecha
+  const solHoy = useMemo(() => solicitudes.filter(r =>
+    !fecha || r.fecha === fechaDMY
+  ), [solicitudes, fecha, fechaDMY]);
+
+  const solAprobadas  = solHoy.filter(r => r.estado.toLowerCase().includes("aprob")).length;
+  const solRechazadas = solHoy.filter(r => r.estado.toLowerCase().includes("rechaz") || r.estado.toLowerCase().includes("cancel")).length;
+  const solPendientes = solHoy.filter(r => r.estado.toLowerCase().includes("pendiente") || r.estado.toLowerCase().includes("process")).length;
+
+  const roles = ["Shopper","Picker","Driver"];
+
+  // Últimos 5 agendados con estado (más recientes primero)
+  const recientes = [...agendados].filter(r => r.estado).slice(-5).reverse();
+
+  const labelFecha = fecha ? `· ${fechaDMY}` : "· Todos los días";
+
+  return (
+    <div>
+      <div className="content-header">
+        <div className="content-title">Dashboard</div>
+        <div className="content-sub">Resumen general de operaciones {labelFecha}</div>
+      </div>
+
+      {/* ── Sección Reposición ── */}
+      <div style={{marginBottom:8, fontSize:11, fontWeight:700, color:"#0143f9", letterSpacing:".06em", textTransform:"uppercase"}}>
+        Reposición
+      </div>
+      <div className="stat-cards" style={{marginBottom:28}}>
+        <div className="stat-card" style={{borderColor:"#0143f9"}}>
+          <div className="stat-value">{repHoy.length}</div>
+          <div className="stat-label">Total agendados</div>
+        </div>
+        {roles.map(rol => {
+          const count = repHoy.filter(r => eqCI(r.rol, rol)).length;
+          const colors = { Shopper:"#6366f1", Picker:"#0891b2", Driver:"#059669" };
+          return (
+            <div className="stat-card" key={rol} style={{borderColor: colors[rol]}}>
+              <div className="stat-value" style={{color: colors[rol]}}>{count}</div>
+              <div className="stat-label">{rol}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Sección Solicitudes ── */}
+      <div style={{marginBottom:8, fontSize:11, fontWeight:700, color:"#0143f9", letterSpacing:".06em", textTransform:"uppercase"}}>
+        Solicitudes
+      </div>
+      <div className="stat-cards" style={{marginBottom:28}}>
+        <div className="stat-card" style={{borderColor:"#0143f9"}}>
+          <div className="stat-value">{solHoy.length}</div>
+          <div className="stat-label">Total solicitudes</div>
+        </div>
+        <div className="stat-card" style={{borderColor:"#15803d"}}>
+          <div className="stat-value" style={{color:"#15803d"}}>{solAprobadas}</div>
+          <div className="stat-label">Aprobadas</div>
+        </div>
+        <div className="stat-card" style={{borderColor:"#854d0e"}}>
+          <div className="stat-value" style={{color:"#854d0e"}}>{solPendientes}</div>
+          <div className="stat-label">Pendientes</div>
+        </div>
+        <div className="stat-card" style={{borderColor:"#991b1b"}}>
+          <div className="stat-value" style={{color:"#991b1b"}}>{solRechazadas}</div>
+          <div className="stat-label">Rechazadas</div>
+        </div>
+      </div>
+
+      {/* ── Últimos agendados ── */}
+      <div style={{marginBottom:8, fontSize:11, fontWeight:700, color:"#0143f9", letterSpacing:".06em", textTransform:"uppercase"}}>
+        Últimos registros en Reposición
+      </div>
+      <div className="table-card">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Local</th>
+              <th>Rol</th>
+              <th>Brand</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recientes.length === 0
+              ? <tr><td colSpan={6} className="empty-td">Sin registros recientes</td></tr>
+              : recientes.map((r,i) => (
+                <tr key={i}>
+                  <td>{r.nombre || <span style={{color:"#94a3b8"}}>–</span>}</td>
+                  <td>{r.local}</td>
+                  <td>{r.rol}</td>
+                  <td><span className="badge badge-brand">{r.brand}</span></td>
+                  <td>{r.fecha}</td>
+                  <td><span className={`badge ${estadoClass(r.estado)}`}>{r.estado}</span></td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -587,11 +700,7 @@ function App() {
 
         <div className="content">
           {menu === "dashboard" && (
-            <div className="placeholder-tab">
-              <div style={{fontSize:48}}>🚧</div>
-              <h3>Próximamente</h3>
-              <p>Esta sección estará disponible pronto.</p>
-            </div>
+            <DashboardTab agendados={agendados} solicitudes={solicitudes} avance={avance} fecha={fecha} />
           )}
           {menu === "solicitudes" && (
             <SolicitudesTab data={solicitudes} loading={loading} fecha={fecha} onRefresh={loadAll} />

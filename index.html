@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Zubale – Salas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -27,7 +30,8 @@
       --warn-text:   #854D0E;
     }
 
-    html, body { height: 100%; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--gray); color: var(--text); }
+        input, button, select, textarea { font-family: 'Lexend', 'Segoe UI', system-ui, sans-serif; }
+    html, body { height: 100%; font-family: 'Lexend', 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--gray); color: var(--text); }
     #root { min-height: 100vh; }
 
     /* ── HEADER ── */
@@ -680,9 +684,9 @@ function AlreadyRegisteredScreen({ onRetry }) {
   return (
     <section className="hero" style={{ textAlign:"center", padding:"48px 24px" }}>
       <div style={{ fontSize:64, marginBottom:16 }}>✅</div>
-      <h2 style={{ margin:"0 0 8px" }}>Ya tenemos tu registro</h2>
-      <p style={{ color:"#FFFFFF", marginBottom:28 }}>
-        Tu disponibilidad ya fue enviada para hoy. Preparate para asistir a sala, te confirmaremos por whatsapp la asistencia.
+      <h2 style={{ margin:"0 0 8px", color:"#ffffff" }}>Ya registraste hoy</h2>
+      <p style={{ color:"#ffffff", marginBottom:28 }}>
+        Tu disponibilidad ya fue enviada para hoy. No es necesario registrarte de nuevo.
       </p>
       <button className="btn-secondary" onClick={onRetry} style={{ maxWidth:260 }}>
         Volver al inicio
@@ -759,8 +763,8 @@ function App() {
   const handleConfirm = (store) => {
     setSelected(null);
     setToast(store);
-    setTimeout(() => setToast(null), 7500);
-    setTimeout(() => setPhase("already_registered"), 7500);
+    setTimeout(() => setToast(null), 10000);
+    setTimeout(() => setPhase("already_registered"), 10500);
   };
 
   const handleRetry = () => {
@@ -817,7 +821,7 @@ function App() {
             </>
           </main>
 
-          <footer className="footer">© 2026 Zubale</footer>
+          <footer className="footer">© 2025 Zubale</footer>
         </>
       )}
 

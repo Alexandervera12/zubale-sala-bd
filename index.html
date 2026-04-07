@@ -127,30 +127,23 @@
       border-color: var(--blue);
       box-shadow: 0 0 0 3px rgba(21,87,214,0.12);
     }
-    .phone-prefix {
-      padding: 0 16px;
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--text);
-      border-right: 2px solid var(--gray2);
-      height: 52px;
-      display: flex;
-      align-items: center;
-      background: var(--gray);
-      white-space: nowrap;
-    }
+    .phone-field-group { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+    .phone-field-label { font-size: 13px; font-weight: 700; color: var(--blue); letter-spacing: 0.3px; text-align: left; padding-left: 4px; }
+    .phone-prefix { display: none; }
     .phone-input {
       flex: 1;
       border: none;
       outline: none;
       padding: 0 16px;
-      font-size: 18px;
-      font-weight: 600;
+      font-size: 22px;
+      font-weight: 700;
       color: var(--text);
       height: 52px;
       font-family: inherit;
-      letter-spacing: 1px;
+      letter-spacing: 2px;
+      width: 100%;
     }
+    .phone-input-full { width: 100%; box-sizing: border-box; }
     .phone-input::placeholder { color: var(--muted); font-weight: 400; font-size: 15px; letter-spacing: 0; }
 
     /* ── BUTTONS ── */
@@ -474,18 +467,20 @@ function PhoneScreen({ onSubmit }) {
           Te mostraremos las salas disponibles para HOY
         </p>
 
-        <div className="phone-input-wrap">
-          <span className="phone-prefix">569</span>
-          <input
-            ref={inputRef}
-            type="tel"
-            inputMode="numeric"
-            className="phone-input"
-            placeholder="XXXX XXXX"
-            value={digits}
-            onChange={handleChange}
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-          />
+        <div className="phone-field-group">
+          <span className="phone-field-label">+56 9 · Ingresa tus 8 dígitos</span>
+          <div className="phone-input-wrap">
+            <input
+              ref={inputRef}
+              type="tel"
+              inputMode="numeric"
+              className="phone-input phone-input-full"
+              placeholder="XXXX XXXX"
+              value={digits}
+              onChange={handleChange}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+            />
+          </div>
         </div>
 
         <button className="btn-primary" onClick={handleSubmit} disabled={digits.length < 8 || loading}>

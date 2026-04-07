@@ -310,6 +310,10 @@
     }
     .warn-box-icon { font-size: 18px; flex-shrink: 0; }
     .warn-box-text { font-size: 13px; font-weight: 600; color: var(--warn-text); line-height: 1.5; }
+    .hora-pregunta { background: var(--blue-light); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+    .hora-label { font-size: 15px; font-weight: 700; color: var(--blue); }
+    .hora-input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 2px solid var(--blue); font-size: 18px; font-weight: 700; color: var(--text); font-family: inherit; background: var(--white); text-align: center; cursor: pointer; box-sizing: border-box; }
+    .hora-input:focus { outline: none; border-color: var(--blue2); box-shadow: 0 0 0 3px rgba(21,87,214,0.15); }
 
     /* ── MODAL ── */
     .overlay {
@@ -407,7 +411,7 @@ const { useState, useEffect, useRef, useMemo } = React;
    URL del GAS de Sala (mismo script, actualizado con checkUser)
    ────────────────────────────────────────────────────────── */
 // ⚠️ Pegá acá la URL de la nueva implementación de google-apps-script-sala-bd.js
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwsUlVs-pBk-1bLknfx6y2YeVR2vJxVHwpcEBRsN27J45n3W4rSecuQ6EvmN9f47tAw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzqHnM4KVPz9tBJnsMLWrExjWydyOZ4Mcix4qAVFZ0B7-AjLzFYtP4vNKJtlKi3iqY/exec";
 
 const ROLE_EMOJI = { Picker: "🛒", Shopper: "🛍️", Driver: "🚙" };
 
@@ -604,6 +608,7 @@ function StoreCard({ store, onSelect }) {
 /* ── Modal de confirmación (sin re-ingresar teléfono) ── */
 function Modal({ store, userInfo, digits, onClose, onSubmit }) {
   const [submitting, setSubmitting] = useState(false);
+  const [horaLlegada, setHora]      = useState("");
 
   useEffect(() => {
     const handleKey = (e) => { if (e.key === "Escape") onClose(); };
@@ -619,12 +624,13 @@ function Modal({ store, userInfo, digits, onClose, onSubmit }) {
         mode: "no-cors",
         headers: { "Content-Type": "text/plain" },
         body: JSON.stringify({
-          local:    store.name,
-          telefono: "569" + digits,
-          rol:      userInfo.rol,
-          cliente:  userInfo.cliente,
-          fecha:    new Date().toLocaleString("es-CL"),
-          source:   "BD"
+          local:       store.name,
+          telefono:    "569" + digits,
+          rol:         userInfo.rol,
+          cliente:     userInfo.cliente,
+          fecha:       new Date().toLocaleString("es-CL"),
+          horaLlegada: horaLlegada,
+          source:      "BD"
         })
       });
     } catch (e) {
@@ -644,6 +650,16 @@ function Modal({ store, userInfo, digits, onClose, onSubmit }) {
         </div>
 
         <div className="modal-body">
+          <div className="hora-pregunta">
+            <div className="hora-label">¿A qué hora podrías llegar?</div>
+            <input
+              type="time"
+              className="hora-input"
+              value={horaLlegada}
+              onChange={e => setHora(e.target.value)}
+            />
+          </div>
+
           <div className="warn-box" style={{ marginBottom: 0 }}>
             <span className="warn-box-icon">⚠️</span>
             <span className="warn-box-text">
@@ -656,7 +672,7 @@ function Modal({ store, userInfo, digits, onClose, onSubmit }) {
             Teléfono: <strong>569{digits}</strong>
           </div>
 
-          <button className="btn-primary" onClick={handleConfirm} disabled={submitting}>
+          <button className="btn-primary" onClick={handleConfirm} disabled={submitting || !horaLlegada}>
             {submitting ? "⏳ Enviando..." : "✅ Confirmar asistencia"}
           </button>
           <button className="btn-secondary" onClick={onClose}>Cancelar</button>

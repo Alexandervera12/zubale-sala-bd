@@ -247,8 +247,7 @@ function todayISO() {
 function isoToDMY(iso) {
   if (!iso) return "";
   const [y,m,d] = iso.split("-");
-  // Elimina ceros iniciales para que coincida con el formato del GAS ("8/4/2026" no "08/04/2026")
-  return `${parseInt(d)}/${parseInt(m)}/${y}`;
+  return `${d}/${m}/${y}`;
 }
 function estadoClass(e) {
   if (!e) return "badge-neutral";

@@ -331,24 +331,17 @@ function Sidebar({ active, onSelect, onLogout }) {
   );
 }
 
-/* ════════════ TABLA CON PAGINACIÓN ════════════ */
+/* ════════════ TABLA SIN PAGINACIÓN (muestra todos los registros) ════════════ */
 function DataTable({ columns, rows, loading, emptyText }) {
-  const [page, setPage] = useState(1);
-  useEffect(() => setPage(1), [rows.length]);
-  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-  const sliced = rows.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
-  const start  = rows.length === 0 ? 0 : (page-1)*PAGE_SIZE+1;
-  const end    = Math.min(page*PAGE_SIZE, rows.length);
-
   return (
     <div className="table-card">
       {loading ? <div className="loading-txt">Cargando datos...</div> : (
         <table className="data-table">
           <thead><tr>{columns.map(c=><th key={c.key}>{c.label}</th>)}</tr></thead>
           <tbody>
-            {sliced.length === 0
+            {rows.length === 0
               ? <tr><td colSpan={columns.length} className="empty-td">{emptyText||"No hay datos disponibles"}</td></tr>
-              : sliced.map((r,i)=>(
+              : rows.map((r,i)=>(
                 <tr key={i}>{columns.map(c=><td key={c.key}>{c.render ? c.render(r[c.key],r) : r[c.key]}</td>)}</tr>
               ))
             }
@@ -356,11 +349,7 @@ function DataTable({ columns, rows, loading, emptyText }) {
         </table>
       )}
       <div className="pagination">
-        <span>Mostrando {start}-{end} de {rows.length}</span>
-        <div className="pag-btns">
-          <button className="pag-btn" disabled={page<=1} onClick={()=>setPage(p=>p-1)}>‹</button>
-          <button className="pag-btn" disabled={page>=totalPages} onClick={()=>setPage(p=>p+1)}>›</button>
-        </div>
+        <span>{rows.length} registro{rows.length !== 1 ? "s" : ""} en total</span>
       </div>
     </div>
   );
@@ -494,7 +483,7 @@ function DashboardTab({ agendados, solicitudes, avance, fecha }) {
       ...repData.map(r => r.brand),
       ...solData.map(r => r.brand),
       ...avData.map(r => r.brand),
-    ].filter(Boolean).map(b => b.toUpperCase()));
+    ].filter(Boolean).map(b => b.toUpperCase().trim()));
     return [...set].sort();
   }, [repData, solData, avData]);
 
@@ -503,10 +492,10 @@ function DashboardTab({ agendados, solicitudes, avance, fecha }) {
   // Últimos 5 agendados con estado
   const recientes = [...agendados].filter(r => r.estado).slice(-5).reverse();
 
-  // Helpers por brand
-  const repBrand = (b) => repData.filter(r => r.brand.toUpperCase() === b);
-  const solBrand = (b) => solData.filter(r => r.brand.toUpperCase() === b);
-  const avBrand  = (b) => avData.filter(r => r.brand.toUpperCase() === b);
+  // Helpers por brand — con .trim() para evitar errores por espacios extra en la hoja
+  const repBrand = (b) => repData.filter(r => (r.brand||"").toUpperCase().trim() === b);
+  const solBrand = (b) => solData.filter(r => (r.brand||"").toUpperCase().trim() === b);
+  const avBrand  = (b) => avData.filter(r => (r.brand||"").toUpperCase().trim() === b);
   const sumAv = (rows, key) => rows.reduce((acc, r) => acc + (parseFloat(r[key]) || 0), 0);
 
   return (

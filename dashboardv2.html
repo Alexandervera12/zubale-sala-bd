@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zubale · Panel de Gestión</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Lexend', sans-serif; background: #eef2ff; }
+    input, button, select, textarea { font-family: 'Lexend', sans-serif; }
+
+    /* ── Layout ── */
+    .layout { display: flex; height: 100vh; overflow: hidden; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 200px; background: #0143f9;
+      display: flex; flex-direction: column; flex-shrink: 0;
+    }
+    .sidebar-logo {
+      padding: 22px 20px 28px;
+      display: flex; align-items: center;
+    }
+    .sidebar-logo img { height: 32px; object-fit: contain; }
+    .sidebar-nav { flex: 1; padding: 0 10px; display: flex; flex-direction: column; gap: 2px; }
+    .sidebar-item {
+      display: flex; align-items: center; gap: 10px; width: 100%;
+      padding: 10px 12px; border: none; background: transparent;
+      color: rgba(255,255,255,0.75); font-size: 14px; font-weight: 500;
+      border-radius: 8px; cursor: pointer; text-align: left; transition: all .15s;
+    }
+    .sidebar-item:hover:not(.disabled) { background: rgba(255,255,255,0.15); color: #fff; }
+    .sidebar-item.active { background: rgba(255,255,255,0.2); color: #fff; font-weight: 700; }
+    .sidebar-item.disabled { opacity: .45; cursor: not-allowed; }
+    .sidebar-icon { font-size: 16px; }
+    .sidebar-bottom { padding: 14px 10px 20px; }
+    .sidebar-logout {
+      width: 100%; padding: 9px 12px; border: none;
+      background: transparent; color: rgba(255,255,255,0.6);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      text-align: left; letter-spacing: .02em;
+    }
+    .sidebar-logout:hover { color: #fff; }
+
+    /* ── Main ── */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+    .main-header {
+      background: #fff; border-bottom: 1px solid #e2e8f0;
+      padding: 14px 28px; display: flex; align-items: center;
+      justify-content: space-between; flex-shrink: 0;
+    }
+    .header-titles {}
+    .header-title { font-size: 16px; font-weight: 700; color: #1a1a3e; }
+    .header-sub   { font-size: 12px; color: #94a3b8; margin-top: 1px; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .header-logo { height: 28px; object-fit: contain; }
+
+    /* ── Content ── */
+    .content { flex: 1; overflow-y: auto; padding: 28px; }
+    .content-header { margin-bottom: 20px; }
+    .content-title { font-size: 22px; font-weight: 800; color: #1a1a3e; margin-bottom: 2px; }
+    .content-sub   { font-size: 13px; color: #94a3b8; }
+
+    /* ── Filters bar ── */
+    .filters-row { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+    .search-wrap { position: relative; }
+    .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; }
+    .filter-input {
+      padding: 7px 10px 7px 30px; border: 1.5px solid #e2e8f0; border-radius: 8px;
+      font-size: 13px; outline: none; min-width: 200px; background: #fff; color: #1e293b;
+    }
+    .filter-input:focus { border-color: #0143f9; }
+    .filter-select {
+      padding: 7px 28px 7px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px;
+      font-size: 13px; outline: none; background: #fff; cursor: pointer; color: #1e293b;
+      appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 9px center;
+    }
+    .filter-date {
+      padding: 7px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px;
+      font-size: 13px; outline: none; background: #fff; color: #1e293b; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .filter-date input { border: none; outline: none; font-size: 13px; color: #1e293b; background: transparent; }
+    .icon-btn {
+      width: 34px; height: 34px; border: 1.5px solid #e2e8f0; border-radius: 8px;
+      background: #fff; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; font-size: 15px; color: #475569; transition: all .15s;
+    }
+    .icon-btn:hover { background: #f1f5f9; }
+    .auto-refresh-toggle {
+      display: flex; align-items: center; gap: 6px; margin-left: auto;
+      font-size: 12px; color: #64748b; cursor: pointer;
+    }
+    .toggle-dot {
+      width: 32px; height: 18px; border-radius: 99px; background: #e2e8f0;
+      position: relative; transition: background .2s; flex-shrink: 0;
+    }
+    .toggle-dot.on { background: #0143f9; }
+    .toggle-dot::after {
+      content: ''; position: absolute; width: 14px; height: 14px;
+      background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: left .2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+    .toggle-dot.on::after { left: 16px; }
+
+    /* ── Table card ── */
+    .table-card { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.07); overflow: hidden; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .data-table th {
+      padding: 13px 16px; text-align: center;
+      font-size: 13px; font-weight: 700; color: #0143f9;
+      border-bottom: 1.5px solid #e2e8f0; background: #fff;
+    }
+    .data-table td { padding: 12px 16px; text-align: center; border-bottom: 1px solid #f1f5f9; color: #334155; }
+    .data-table tbody tr:hover { background: #f8faff; }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .empty-td { text-align: center; color: #94a3b8; padding: 52px !important; font-size: 14px; }
+
+    /* ── Pagination ── */
+    .pagination {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-top: 1px solid #f1f5f9;
+      font-size: 13px; color: #64748b;
+    }
+    .pag-btns { display: flex; gap: 6px; }
+    .pag-btn {
+      width: 30px; height: 30px; border: 1.5px solid #e2e8f0; border-radius: 6px;
+      background: #fff; cursor: pointer; font-size: 14px; color: #475569;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pag-btn:hover:not(:disabled) { background: #f1f5f9; }
+    .pag-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+    /* ── Stat cards ── */
+    .stat-cards { display: flex; gap: 14px; margin-bottom: 20px; }
+    .stat-card {
+      background: #fff; border-radius: 12px; padding: 18px 22px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07); min-width: 180px;
+      border-top: 3px solid #0143f9;
+    }
+    .stat-value { font-size: 30px; font-weight: 800; color: #1a1a3e; }
+    .stat-label { font-size: 12px; color: #94a3b8; margin-top: 4px; font-weight: 500; }
+
+    /* ── Badges ── */
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; white-space: nowrap; min-width: 90px; text-align: center; }
+    .badge-brand    { background: #eef2ff; color: #0143f9; }
+    .badge-ok       { background: #dcfce7; color: #15803d; }
+    .badge-warn     { background: #fef9c3; color: #854d0e; }
+    .badge-err      { background: #fee2e2; color: #991b1b; }
+    .badge-neutral  { background: #f1f5f9; color: #475569; }
+
+    /* ── Auth split-screen ── */
+    .auth-layout { display: flex; min-height: 100vh; }
+    .auth-left {
+      flex: 7; background: #0143f9;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 10px;
+      padding: 40px;
+    }
+    .auth-left-logo { height: 80px; object-fit: contain; }
+    .auth-left-title { font-size: 22px; font-weight: 700; color: #fff; margin-top: 10px; }
+    .auth-left-sub   { font-size: 14px; color: rgba(255,255,255,.65); }
+    .auth-right {
+      flex: 3; background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      padding: 48px 52px;
+    }
+    .auth-form-wrap { width: 100%; max-width: 360px; }
+    .auth-form-title { font-size: 20px; font-weight: 800; color: #1a1a3e; margin-bottom: 28px; }
+    .auth-label {
+      display: block; font-size: 13px; font-weight: 600;
+      color: #374151; margin-bottom: 6px;
+    }
+    .auth-input {
+      width: 100%; padding: 11px 14px; border: 1.5px solid #e2e8f0;
+      border-radius: 8px; font-size: 14px; outline: none; margin-bottom: 18px; color: #1a1a3e;
+    }
+    .auth-input:focus { border-color: #0143f9; box-shadow: 0 0 0 3px rgba(21,87,214,.1); }
+    .auth-btn {
+      width: 100%; padding: 12px; background: #0143f9; color: #fff;
+      border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+    .auth-btn:hover:not(:disabled) { background: #1228c4; }
+    .auth-btn:disabled { opacity: .55; cursor: not-allowed; }
+    .auth-error { color: #dc2626; font-size: 13px; margin-bottom: 14px; background: #fef2f2; padding: 8px 12px; border-radius: 8px; }
+
+    /* ── Brand cards ── */
+    .brand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .brand-card {
+      background: #fff; border-radius: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07); overflow: hidden;
+    }
+    .brand-card-header {
+      background: #0143f9; color: #fff;
+      padding: 12px 20px; font-size: 13px; font-weight: 800;
+      letter-spacing: .06em; text-transform: uppercase;
+    }
+    .brand-card-body { display: flex; }
+    .brand-section {
+      flex: 1; padding: 14px 16px;
+      border-right: 1px solid #f1f5f9;
+    }
+    .brand-section:last-child { border-right: none; }
+    .brand-section-title {
+      font-size: 9px; font-weight: 800; color: #94a3b8;
+      letter-spacing: .08em; text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .brand-kv { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .brand-kv-label { font-size: 12px; color: #64748b; }
+    .brand-kv-val   { font-size: 14px; font-weight: 800; color: #1a1a3e; }
+    .brand-kv-val.ok  { color: #15803d; }
+    .brand-kv-val.err { color: #991b1b; }
+    .brand-kv-val.blue { color: #0143f9; }
+
+    /* ── Misc ── */
+    .loading-txt  { padding: 52px; text-align: center; color: #94a3b8; font-size: 14px; }
+    .placeholder-tab { text-align: center; padding: 80px 40px; color: #94a3b8; }
+    .placeholder-tab h3 { font-size: 18px; color: #64748b; margin: 12px 0 6px; }
+    .refresh-indicator { font-size: 11px; color: #94a3b8; margin-left: 6px; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+/* ══════════════════════════════════════════════════════
+   ⚠️  REEMPLAZA CON TU URL DEL GAS
+   ══════════════════════════════════════════════════════ */
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwsUlVs-pBk-1bLknfx6y2YeVR2vJxVHwpcEBRsN27J45n3W4rSecuQ6EvmN9f47tAw/exec";  // ← misma URL para todo (BD + Supply)
+
+const PAGE_SIZE = 10;
+
+/* ── Helpers ── */
+function todayISO() {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`;
+}
+function isoToDMY(iso) {
+  if (!iso) return "";
+  const [y,m,d] = iso.split("-");
+  // Elimina ceros iniciales para que coincida con el formato del GAS ("8/4/2026" no "08/04/2026")
+  return `${parseInt(d)}/${parseInt(m)}/${y}`;
+}
+function estadoClass(e) {
+  if (!e) return "badge-neutral";
+  const l = e.toLowerCase();
+  if (l.includes("rechaz") || l.includes("cancel")) return "badge-err";
+  if (l.includes("pendiente") || l.includes("process")) return "badge-warn";
+  if (l.includes("ok") || l.includes("aprob") || l.includes("complet") || l.includes("activ") || l.includes("camino") || l.includes("asiste")) return "badge-ok";
+  return "badge-neutral";
+}
+// Comparación case-insensitive para matching entre sheets
+function eqCI(a, b) { return String(a||"").toLowerCase().trim() === String(b||"").toLowerCase().trim(); }
+
+/* ════════════ LOGIN ════════════ */
+function PasswordGate({ onAuth }) {
+  const [pwd, setPwd]     = useState("");
+  const [error, setError] = useState("");
+  const [loading, setL]   = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault(); setL(true); setError("");
+    try {
+      const res = await fetch(`${GAS_URL}?action=checkPassword&pwd=${encodeURIComponent(pwd)}`).then(r=>r.json());
+      if (res.status === "ok") { sessionStorage.setItem("zubale_panel_auth","1"); onAuth(); }
+      else setError("Clave incorrecta. Intenta de nuevo.");
+    } catch { setError("Error de conexión. Verifica que el GAS esté activo."); }
+    setL(false);
+  };
+
+  return (
+    <div className="auth-layout">
+      <div className="auth-left">
+        <img className="auth-left-logo" src="https://client-portal.zenith.zubale.com/auth/images/logo.svg" alt="Zubale" />
+        <div className="auth-left-title">Dashboard de operaciones</div>
+        <div className="auth-left-sub">Gestión integral de reposición</div>
+      </div>
+      <div className="auth-right">
+        <div className="auth-form-wrap">
+          <div className="auth-form-title">Accede a tu cuenta</div>
+          <form onSubmit={handleSubmit}>
+            <label className="auth-label">Contraseña</label>
+            <input type="password" className="auth-input" placeholder="Ingresa tu contraseña"
+              value={pwd} onChange={e=>setPwd(e.target.value)} autoFocus />
+            {error && <div className="auth-error">{error}</div>}
+            <button type="submit" className="auth-btn" disabled={loading}>
+              {loading ? "Verificando..." : "Iniciar sesión"}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════ SIDEBAR ════════════ */
+function Sidebar({ active, onSelect, onLogout }) {
+  const items = [
+    { id:"dashboard",   label:"Dashboard" },
+    { id:"solicitudes", label:"Solicitudes" },
+    { id:"reposicion",  label:"Reposición" },
+    { id:"avance",      label:"Avance" },
+    { id:"supply",      label:"Supply" },
+  ];
+  return (
+    <aside className="sidebar">
+      <div className="sidebar-logo">
+        <img src="https://client-portal.zenith.zubale.com/auth/images/logo.svg" alt="Zubale" />
+      </div>
+      <nav className="sidebar-nav">
+        {items.map(it => (
+          <button key={it.id}
+            className={`sidebar-item${active===it.id?" active":""}`}
+            onClick={() => onSelect(it.id)}>
+            {it.label}
+          </button>
+        ))}
+      </nav>
+      <div className="sidebar-bottom">
+        <button className="sidebar-logout" onClick={onLogout}>Logout</button>
+      </div>
+    </aside>
+  );
+}
+
+/* ════════════ TABLA SIN PAGINACIÓN (muestra todos los registros) ════════════ */
+function DataTable({ columns, rows, loading, emptyText }) {
+  return (
+    <div className="table-card">
+      {loading ? <div className="loading-txt">Cargando datos...</div> : (
+        <table className="data-table">
+          <thead><tr>{columns.map(c=><th key={c.key}>{c.label}</th>)}</tr></thead>
+          <tbody>
+            {rows.length === 0
+              ? <tr><td colSpan={columns.length} className="empty-td">{emptyText||"No hay datos disponibles"}</td></tr>
+              : rows.map((r,i)=>(
+                <tr key={i}>{columns.map(c=><td key={c.key}>{c.render ? c.render(r[c.key],r) : r[c.key]}</td>)}</tr>
+              ))
+            }
+          </tbody>
+        </table>
+      )}
+      <div className="pagination">
+        <span>{rows.length} registro{rows.length !== 1 ? "s" : ""} en total</span>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════ SOLICITUDES ════════════ */
+function SolicitudesTab({ data, loading, fecha, onRefresh }) {
+  const [srchLocal, setSL] = useState("");
+  const [fBrand, setFB]    = useState("");
+
+  const fechaDMY = isoToDMY(fecha);
+  const brands   = useMemo(() => [...new Set(data.map(r=>r.brand).filter(Boolean))].sort(), [data]);
+  const filtered = useMemo(() => data.filter(r => {
+    if (fecha && r.fecha !== fechaDMY) return false;
+    if (srchLocal && !r.local.toLowerCase().includes(srchLocal.toLowerCase())) return false;
+    if (fBrand && r.brand !== fBrand) return false;
+    return true;
+  }), [data, fecha, fechaDMY, srchLocal, fBrand]);
+
+  const cols = [
+    { key:"brand",    label:"Brand",    render: v => <span className="badge badge-brand">{v}</span> },
+    { key:"local",    label:"Local" },
+    { key:"solicitud",label:"Solicitud" },
+    { key:"approver", label:"Approver", render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
+    { key:"estado",   label:"Estado",   render: v => <span className={`badge ${estadoClass(v)}`}>{v||"–"}</span> },
+  ];
+
+  return (
+    <div>
+      <div className="content-header">
+        <div className="content-title">Solicitudes</div>
+        <div className="content-sub">Listado de solicitudes registradas</div>
+      </div>
+      <div className="filters-row">
+        <div className="search-wrap">
+          <span className="search-icon">⌕</span>
+          <input className="filter-input" placeholder="Buscar por local..."
+            value={srchLocal} onChange={e=>setSL(e.target.value)} />
+        </div>
+        <select className="filter-select" value={fBrand} onChange={e=>setFB(e.target.value)}>
+          <option value="">Brand ▾</option>
+          {brands.map(b=><option key={b} value={b}>{b}</option>)}
+        </select>
+        <button className="icon-btn" onClick={onRefresh} title="Actualizar">↺</button>
+      </div>
+      <DataTable columns={cols} rows={filtered} loading={loading} />
+    </div>
+  );
+}
+
+/* ════════════ REPOSICIÓN ════════════ */
+function ReposicionTab({ data, loading, fecha, onRefresh }) {
+  const [srchLocal, setSL] = useState("");
+  const [fBrand, setFB]    = useState("");
+
+  const fechaDMY = isoToDMY(fecha);
+  const brands   = useMemo(() => [...new Set(data.map(r=>r.brand).filter(Boolean))].sort(), [data]);
+  const filtered = useMemo(() => data.filter(r => {
+    if (!r.estado) return false;
+    if (fecha && r.fecha !== fechaDMY) return false;
+    if (srchLocal && !r.local.toLowerCase().includes(srchLocal.toLowerCase())) return false;
+    if (fBrand && r.brand !== fBrand) return false;
+    return true;
+  }), [data, fecha, fechaDMY, srchLocal, fBrand]);
+
+  const cols = [
+    { key:"brand",         label:"Brand",         render: v => <span className="badge badge-brand">{v}</span> },
+    { key:"local",         label:"Local" },
+    { key:"rol",           label:"Rol" },
+    { key:"telefono",      label:"Teléfono" },
+    { key:"nombre",        label:"Nombre",        render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
+    { key:"estado",        label:"Estado",        render: v => <span className={`badge ${estadoClass(v)}`}>{v}</span> },
+    { key:"observaciones", label:"Observaciones", render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
+  ];
+
+  return (
+    <div>
+      <div className="content-header">
+        <div className="content-title">Reposición</div>
+        <div className="content-sub">Usuarios agendados a través de la web</div>
+      </div>
+      <div className="stat-cards">
+        <div className="stat-card">
+          <div className="stat-value">{filtered.length}</div>
+          <div className="stat-label">Total usuarios agendados</div>
+        </div>
+        {["Shopper","Picker","Driver"].map(rol => (
+          <div className="stat-card" key={rol}>
+            <div className="stat-value">{filtered.filter(r=>eqCI(r.rol,rol)).length}</div>
+            <div className="stat-label">{rol}</div>
+          </div>
+        ))}
+      </div>
+      <div className="filters-row">
+        <div className="search-wrap">
+          <span className="search-icon">⌕</span>
+          <input className="filter-input" placeholder="Buscar por local..."
+            value={srchLocal} onChange={e=>setSL(e.target.value)} />
+        </div>
+        <select className="filter-select" value={fBrand} onChange={e=>setFB(e.target.value)}>
+          <option value="">Brand ▾</option>
+          {brands.map(b=><option key={b} value={b}>{b}</option>)}
+        </select>
+        <button className="icon-btn" onClick={onRefresh} title="Actualizar">↺</button>
+      </div>
+      <DataTable columns={cols} rows={filtered} loading={loading} />
+    </div>
+  );
+}
+
+/* ════════════ DASHBOARD OVERVIEW ════════════ */
+function DashboardTab({ agendados, solicitudes, avance, fecha }) {
+  const fechaDMY = isoToDMY(fecha);
+
+  // Datos filtrados por fecha
+  const repData = useMemo(() => agendados.filter(r =>
+    r.estado && (!fecha || r.fecha === fechaDMY)
+  ), [agendados, fecha, fechaDMY]);
+
+  const solData = useMemo(() => solicitudes.filter(r =>
+    !fecha || r.fecha === fechaDMY
+  ), [solicitudes, fecha, fechaDMY]);
+
+  const avData = useMemo(() => avance.filter(r =>
+    !fecha || r.fecha === fechaDMY
+  ), [avance, fecha, fechaDMY]);
+
+  // Todos los brands únicos combinando las 3 fuentes
+  const brands = useMemo(() => {
+    const set = new Set([
+      ...repData.map(r => r.brand),
+      ...solData.map(r => r.brand),
+      ...avData.map(r => r.brand),
+    ].filter(Boolean).map(b => b.toUpperCase().trim()));
+    return [...set].sort();
+  }, [repData, solData, avData]);
+
+  const labelFecha = fecha ? fechaDMY : "Todos los días";
+
+  // Últimos 5 agendados con estado
+  const recientes = [...agendados].filter(r => r.estado).slice(-5).reverse();
+
+  // Helpers por brand — con .trim() para evitar errores por espacios extra en la hoja
+  const repBrand = (b) => repData.filter(r => (r.brand||"").toUpperCase().trim() === b);
+  const solBrand = (b) => solData.filter(r => (r.brand||"").toUpperCase().trim() === b);
+  const avBrand  = (b) => avData.filter(r => (r.brand||"").toUpperCase().trim() === b);
+  const sumAv = (rows, key) => rows.reduce((acc, r) => acc + (parseFloat(r[key]) || 0), 0);
+
+  return (
+    <div>
+      <div className="content-header" style={{marginBottom:8}}>
+        <div className="content-title">Dashboard</div>
+        <div className="content-sub">Resumen por brand · {labelFecha}</div>
+      </div>
+
+      {/* ── Tarjetas por brand ── */}
+      <div className="brand-grid">
+        {brands.map(brand => {
+          const rep = repBrand(brand);
+          const sol = solBrand(brand);
+          const av  = avBrand(brand);
+          const ns     = sumAv(av, "pushNoShow");
+          const activa = sumAv(av, "pushBusqueda");
+          const total  = sumAv(av, "totalAlcanzado");
+          return (
+            <div className="brand-card" key={brand}>
+              <div className="brand-card-header">{brand}</div>
+              <div className="brand-card-body">
+
+                {/* Reposición */}
+                <div className="brand-section">
+                  <div className="brand-section-title">Reposición</div>
+                  <div className="brand-kv">
+                    <span className="brand-kv-label">Total</span>
+                    <span className="brand-kv-val blue">{rep.length}</span>
+                  </div>
+                  {["Shopper","Picker","Driver"].map(rol => (
+                    <div className="brand-kv" key={rol}>
+                      <span className="brand-kv-label">{rol}</span>
+                      <span className="brand-kv-val">{rep.filter(r=>eqCI(r.rol,rol)).length}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Solicitudes */}
+                <div className="brand-section">
+                  <div className="brand-section-title">Solicitudes</div>
+                  <div className="brand-kv">
+                    <span className="brand-kv-label">Total</span>
+                    <span className="brand-kv-val blue">{sol.length}</span>
+                  </div>
+                  <div className="brand-kv">
+                    <span className="brand-kv-label">Aprobadas</span>
+                    <span className="brand-kv-val ok">{sol.filter(r=>r.estado.toLowerCase().includes("aprob")).length}</span>
+                  </div>
+                  <div className="brand-kv">
+                    <span className="brand-kv-label">Rechazadas</span>
+                    <span className="brand-kv-val err">{sol.filter(r=>r.estado.toLowerCase().includes("rechaz")||r.estado.toLowerCase().includes("cancel")).length}</span>
+                  </div>
+                </div>
+
+                {/* Avance */}
+                <div className="brand-section">
+                  <div className="brand-section-title">Avance</div>
+                  <div className="brand-kv">
+                    <span className="brand-kv-label">NS</span>
+                    <span className="brand-kv-val">{ns || "–"}</span>
+                  </div>
+                  <div className="brand-kv">
+                    <span className="brand-kv-label">Activa</span>
+                    <span className="brand-kv-val">{activa || "–"}</span>
+                  </div>
+                  <div className="brand-kv">
+                    <span className="brand-kv-label">Total</span>
+                    <span className="brand-kv-val blue">{total || "–"}</span>
+                  </div>
+                  <div className="brand-kv" style={{marginTop:6,paddingTop:6,borderTop:"1px solid #f1f5f9"}}>
+                    <span className="brand-kv-label">Agendados</span>
+                    <span className="brand-kv-val blue">{new Set(rep.map(r=>r.telefono)).size}</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          );
+        })}
+        {brands.length === 0 && (
+          <div style={{color:"#94a3b8",fontSize:14,padding:"40px 0"}}>Sin datos para el período seleccionado</div>
+        )}
+      </div>
+
+      {/* ── Tarjeta Totales ── */}
+      <div style={{marginBottom:8,fontSize:11,fontWeight:700,color:"#0143f9",letterSpacing:".06em",textTransform:"uppercase"}}>
+        Totales globales
+      </div>
+      <div className="brand-card" style={{marginBottom:28}}>
+        <div className="brand-card-header">TOTAL · TODOS LOS BRANDS</div>
+        <div className="brand-card-body">
+
+          {/* Total Reposición */}
+          <div className="brand-section">
+            <div className="brand-section-title">Reposición</div>
+            <div className="brand-kv">
+              <span className="brand-kv-label">Total agendados</span>
+              <span className="brand-kv-val blue">{repData.length}</span>
+            </div>
+            {["Shopper","Picker","Driver"].map(rol => (
+              <div className="brand-kv" key={rol}>
+                <span className="brand-kv-label">{rol}</span>
+                <span className="brand-kv-val">{repData.filter(r=>eqCI(r.rol,rol)).length}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Total Solicitudes */}
+          <div className="brand-section">
+            <div className="brand-section-title">Solicitudes</div>
+            <div className="brand-kv">
+              <span className="brand-kv-label">Total</span>
+              <span className="brand-kv-val blue">{solData.length}</span>
+            </div>
+            <div className="brand-kv">
+              <span className="brand-kv-label">Aprobadas</span>
+              <span className="brand-kv-val ok">{solData.filter(r=>r.estado.toLowerCase().includes("aprob")).length}</span>
+            </div>
+            <div className="brand-kv">
+              <span className="brand-kv-label">Rechazadas</span>
+              <span className="brand-kv-val err">{solData.filter(r=>r.estado.toLowerCase().includes("rechaz")||r.estado.toLowerCase().includes("cancel")).length}</span>
+            </div>
+          </div>
+
+          {/* Total Avance */}
+          <div className="brand-section">
+            <div className="brand-section-title">Avance</div>
+            <div className="brand-kv">
+              <span className="brand-kv-label">NS</span>
+              <span className="brand-kv-val">{sumAv(avData,"pushNoShow") || "–"}</span>
+            </div>
+            <div className="brand-kv">
+              <span className="brand-kv-label">Activa</span>
+              <span className="brand-kv-val">{sumAv(avData,"pushBusqueda") || "–"}</span>
+            </div>
+            <div className="brand-kv">
+              <span className="brand-kv-label">Total</span>
+              <span className="brand-kv-val blue">{sumAv(avData,"totalAlcanzado") || "–"}</span>
+            </div>
+            <div className="brand-kv" style={{marginTop:6,paddingTop:6,borderTop:"1px solid #f1f5f9"}}>
+              <span className="brand-kv-label">Agendados</span>
+              <span className="brand-kv-val blue">{new Set(repData.map(r=>r.telefono)).size}</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* ── Últimos registros ── */}
+      <div style={{marginBottom:8,fontSize:11,fontWeight:700,color:"#0143f9",letterSpacing:".06em",textTransform:"uppercase"}}>
+        Últimos registros en Reposición
+      </div>
+      <div className="table-card">
+        <table className="data-table">
+          <thead>
+            <tr><th>Nombre</th><th>Local</th><th>Rol</th><th>Brand</th><th>Fecha</th><th>Estado</th></tr>
+          </thead>
+          <tbody>
+            {recientes.length === 0
+              ? <tr><td colSpan={6} className="empty-td">Sin registros recientes</td></tr>
+              : recientes.map((r,i) => (
+                <tr key={i}>
+                  <td>{r.nombre || <span style={{color:"#94a3b8"}}>–</span>}</td>
+                  <td>{r.local}</td>
+                  <td>{r.rol}</td>
+                  <td><span className="badge badge-brand">{r.brand}</span></td>
+                  <td>{r.fecha}</td>
+                  <td><span className={`badge ${estadoClass(r.estado)}`}>{r.estado}</span></td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════ AVANCE ════════════ */
+function AvanceTab({ data, agendados, loading, fecha, onRefresh }) {
+  const [srchLocal, setSL] = useState("");
+  const [fBrand, setFB]    = useState("");
+  const [fRol, setFR]      = useState("");
+
+  const fechaDMY = isoToDMY(fecha);
+  const brands   = useMemo(() => [...new Set(data.map(r=>r.brand).filter(Boolean))].sort(), [data]);
+  const roles    = useMemo(() => [...new Set(data.map(r=>r.rol).filter(Boolean))].sort(), [data]);
+  const filtered = useMemo(() => data.filter(r => {
+    if (fecha && r.fecha !== fechaDMY) return false;
+    if (srchLocal && !r.local.toLowerCase().includes(srchLocal.toLowerCase())) return false;
+    if (fBrand && !eqCI(r.brand, fBrand)) return false;
+    if (fRol && !eqCI(r.rol, fRol)) return false;
+    return true;
+  }), [data, fecha, fechaDMY, srchLocal, fBrand, fRol]);
+
+  // Cruce: local + rol + misma fecha del registro (sin brand, case-insensitive)
+  const countAgendados = useCallback((row) => {
+    const matches = agendados.filter(a =>
+      eqCI(a.local, row.local) &&
+      eqCI(a.rol,   row.rol)   &&
+      a.fecha === row.fecha
+    );
+    return new Set(matches.map(a => a.telefono)).size;
+  }, [agendados]);
+
+  const cols = [
+    { key:"brand",          label:"Brand",                render: v => <span className="badge badge-brand">{v}</span> },
+    { key:"local",          label:"Local" },
+    { key:"rol",            label:"Rol" },
+    { key:"pushNoShow",     label:"Push No Show",         render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
+    { key:"pushBusqueda",   label:"Push Búsqueda activa", render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
+    { key:"totalAlcanzado", label:"Total Alcanzado",      render: v => v || <span style={{color:"#94a3b8"}}>–</span> },
+    { key:"_ag", label:"Agendado", render: (_,row) => {
+        const n = countAgendados(row);
+        return n > 0
+          ? <span style={{fontWeight:700,color:"#0143f9"}}>{n}</span>
+          : <span style={{color:"#94a3b8"}}>0</span>;
+    }},
+  ];
+
+  return (
+    <div>
+      <div className="content-header">
+        <div className="content-title">Avance</div>
+        <div className="content-sub">Seguimiento de avance por local y rol</div>
+      </div>
+      <div className="filters-row">
+        <div className="search-wrap">
+          <span className="search-icon">⌕</span>
+          <input className="filter-input" placeholder="Buscar por local..."
+            value={srchLocal} onChange={e=>setSL(e.target.value)} />
+        </div>
+        <select className="filter-select" value={fBrand} onChange={e=>setFB(e.target.value)}>
+          <option value="">Brand ▾</option>
+          {brands.map(b=><option key={b} value={b}>{b}</option>)}
+        </select>
+        <select className="filter-select" value={fRol} onChange={e=>setFR(e.target.value)}>
+          <option value="">Rol ▾</option>
+          {roles.map(r=><option key={r} value={r}>{r}</option>)}
+        </select>
+        <button className="icon-btn" onClick={onRefresh} title="Actualizar">↺</button>
+      </div>
+      <DataTable columns={cols} rows={filtered} loading={loading} emptyText="Sin datos de avance para el período seleccionado" />
+    </div>
+  );
+}
+
+/* ════════════ SUPPLY TAB ════════════ */
+function SupplyTab({ data, loading, fecha, onRefresh }) {
+  const [srchLocal, setSL] = useState("");
+  const [fBrand,    setFB] = useState("");
+  const [fRol,      setFR] = useState("");
+
+  const fechaDMY = isoToDMY(fecha);
+  const brands   = useMemo(() => [...new Set(data.map(r=>r.cliente).filter(Boolean))].sort(), [data]);
+  const roles    = useMemo(() => [...new Set(data.map(r=>r.rol).filter(Boolean))].sort(), [data]);
+
+  const filtered = useMemo(() => data.filter(r => {
+    if (fechaDMY && r.fechaCorregida !== fechaDMY) return false;
+    if (fBrand && r.cliente !== fBrand) return false;
+    if (fRol   && r.rol    !== fRol)    return false;
+    if (srchLocal && !String(r.local||"").toLowerCase().includes(srchLocal.toLowerCase())) return false;
+    return true;
+  }), [data, fechaDMY, fBrand, fRol, srchLocal]);
+
+  // Stat cards por rol
+  const roleStats = useMemo(() => {
+    return ["Picker","Driver","Shopper"].map(rol => ({
+      rol,
+      count: filtered.filter(r => eqCI(r.rol, rol)).length
+    }));
+  }, [filtered]);
+
+  const cols = [
+    { key:"cliente",       label:"Brand" },
+    { key:"local",         label:"Local" },
+    { key:"rol",           label:"Rol" },
+    { key:"telefono",      label:"Teléfono" },
+    { key:"nombre",        label:"Nombre" },
+    { key:"fechaElegida",  label:"Fecha Elegida" },
+    { key:"turno",         label:"Turno" },
+    { key:"fechaCorregida",label:"Fecha Corregida" },
+  ];
+
+  return (
+    <div>
+      <div className="content-header">
+        <div className="content-title">Supply</div>
+        <div className="content-sub">Agendados en salas de Supply · {filtered.length} registros</div>
+      </div>
+
+      {/* Stat cards */}
+      <div className="stat-cards">
+        <div className="stat-card">
+          <div className="stat-value">{filtered.length}</div>
+          <div className="stat-label">Total usuarios agendados</div>
+        </div>
+        {roleStats.map(({rol, count}) => (
+          <div className="stat-card" key={rol}>
+            <div className="stat-value">{count}</div>
+            <div className="stat-label">{rol}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filtros */}
+      <div className="filters-row">
+        <div className="search-wrap">
+          <span className="search-icon">⌕</span>
+          <input className="filter-input" placeholder="Buscar local..." value={srchLocal} onChange={e=>setSL(e.target.value)} />
+        </div>
+        <select className="filter-select" value={fBrand} onChange={e=>setFB(e.target.value)}>
+          <option value="">Todos los brand</option>
+          {brands.map(b=><option key={b} value={b}>{b}</option>)}
+        </select>
+        <select className="filter-select" value={fRol} onChange={e=>setFR(e.target.value)}>
+          <option value="">Todos los roles</option>
+          {roles.map(r=><option key={r} value={r}>{r}</option>)}
+        </select>
+        <button className="icon-btn" onClick={onRefresh} title="Actualizar">↺</button>
+      </div>
+
+      <DataTable columns={cols} rows={filtered} loading={loading} emptyText="Sin registros Supply para el período seleccionado" />
+    </div>
+  );
+}
+
+/* ════════════ APP — carga única de todos los datos ════════════ */
+function App() {
+  const [auth, setAuth]       = useState(sessionStorage.getItem("zubale_panel_auth")==="1");
+  const [menu, setMenu]       = useState("dashboard");
+  const [fecha, setFecha]     = useState(todayISO());
+  const [autoRefresh, setAR]  = useState(false);
+
+  // Datos centralizados
+  const [agendados,   setAgendados]   = useState([]);
+  const [solicitudes, setSolicitudes] = useState([]);
+  const [avance,      setAvance]      = useState([]);
+  const [supplyData,  setSupplyData]  = useState([]);
+  const [loading,     setLoading]     = useState(false);
+  const timerRef = useRef(null);
+
+  const loadAll = useCallback((force = false) => {
+    if (!auth) return;
+    const get = (action) =>
+      fetch(`${GAS_URL}?action=${action}`).then(r=>r.json())
+        .then(res => res.data || []).catch(() => []);
+
+    setLoading(true);
+    Promise.all([
+      get("getAgendados"),
+      get("getSolicitudes"),
+      get("getAvance"),
+      get("getAgendadosSupply"),
+    ]).then(([ag, sol, av, sup]) => {
+      setAgendados(ag);
+      setSolicitudes(sol);
+      setAvance(av);
+      setSupplyData(sup);
+      setLoading(false);
+    });
+  }, [auth]);
+
+  // Carga inicial al autenticarse
+  useEffect(() => { if (auth) loadAll(); }, [auth, loadAll]);
+
+  // Auto-refresh global
+  useEffect(() => {
+    clearInterval(timerRef.current);
+    if (auth && autoRefresh) timerRef.current = setInterval(loadAll, 5 * 60 * 1000);
+    return () => clearInterval(timerRef.current);
+  }, [auth, autoRefresh, loadAll]);
+
+  const handleLogout = () => { sessionStorage.removeItem("zubale_panel_auth"); setAuth(false); };
+  if (!auth) return <PasswordGate onAuth={()=>setAuth(true)} />;
+
+  return (
+    <div className="layout">
+      <Sidebar active={menu} onSelect={setMenu} onLogout={handleLogout} />
+      <div className="main">
+        <header className="main-header">
+          <div className="header-titles">
+            <div className="header-title">Dashboard de operaciones</div>
+            <div className="header-sub">Gestión integral de reposición</div>
+          </div>
+          <div className="header-right">
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:12,color:"#94a3b8",fontWeight:500}}>Fecha</span>
+              <input type="date" style={{padding:"5px 8px",border:"1.5px solid #e2e8f0",borderRadius:6,fontSize:12,outline:"none",fontFamily:"Lexend,sans-serif"}}
+                value={fecha} onChange={e=>setFecha(e.target.value)} />
+              {fecha && <button className="icon-btn" style={{width:26,height:26,fontSize:11}} onClick={()=>setFecha("")} title="Todas las fechas">✕</button>}
+            </div>
+            <div className="auto-refresh-toggle" onClick={()=>setAR(v=>!v)} title="Auto-actualizar cada 5 minutos">
+              <div className={`toggle-dot${autoRefresh?" on":""}`} />
+              <span>Auto ↺{autoRefresh && <span className="refresh-indicator">· 5 min</span>}</span>
+            </div>
+            <img className="header-logo" src="https://client-portal.zenith.zubale.com/auth/images/logo.svg" alt="Zubale" />
+          </div>
+        </header>
+
+        <div className="content">
+          {menu === "dashboard" && (
+            <DashboardTab agendados={agendados} solicitudes={solicitudes} avance={avance} fecha={fecha} />
+          )}
+          {menu === "solicitudes" && (
+            <SolicitudesTab data={solicitudes} loading={loading} fecha={fecha} onRefresh={loadAll} />
+          )}
+          {menu === "reposicion" && (
+            <ReposicionTab data={agendados} loading={loading} fecha={fecha} onRefresh={loadAll} />
+          )}
+          {menu === "avance" && (
+            <AvanceTab data={avance} agendados={agendados} loading={loading} fecha={fecha} onRefresh={loadAll} />
+          )}
+          {menu === "supply" && (
+            <SupplyTab data={supplyData} loading={loading} fecha={fecha} onRefresh={loadAll} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

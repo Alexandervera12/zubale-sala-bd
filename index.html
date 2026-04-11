@@ -284,6 +284,10 @@
 
     .store-name { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; }
     .store-cta { font-size: 12px; color: var(--blue); font-weight: 600; }
+    .store-direccion { font-size: 11px; color: var(--muted); margin-bottom: 6px; line-height: 1.4; text-align: center; padding: 0 8px; }
+    .regions-wrap { display: flex; flex-direction: column; gap: 28px; }
+    .region-group { display: flex; flex-direction: column; gap: 12px; }
+    .region-header { font-size: 12px; font-weight: 800; color: var(--blue); letter-spacing: 0.8px; text-transform: uppercase; padding: 6px 2px; border-bottom: 2px solid var(--blue-light); margin-bottom: 2px; }
 
     /* ── EMPTY ── */
     .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
@@ -595,6 +599,7 @@ function StoreCard({ store, onSelect }) {
         <span className="store-emoji">{store.emoji}</span>
       </div>
       <div className="store-name">{store.name}</div>
+      {store.direccion && <div className="store-direccion">{store.direccion}</div>}
       <span className="store-cta">Reservar →</span>
     </div>
   );
@@ -684,7 +689,7 @@ function Toast({ store }) {
       <div className="toast-icon">🎉</div>
       <div className="toast-title">¡Tu Registro Fue enviado!</div>
       <div className="toast-msg">
-        Tu disponibilidad de asistencia en <strong>{store.name}</strong> quedó registrada. Preparate para asistir! y Dirigite a sala! Contamos contigo.
+        Tu disponibilidad de asistencia en <strong>{store.name}</strong> quedó registrada. Preparate para asistir! Recibirás confirmación previamente por whatsapp.
       </div>
     </div>
   );
@@ -755,8 +760,12 @@ function App() {
           setPhase("already_registered");
           return;
         }
-        setMyStores((res.stores || []).map((name, i) => ({
-          id: i, name, emoji: ROLE_EMOJI[res.rol] || "🏪"
+        setMyStores((res.stores || []).map((s, i) => ({
+          id: i,
+          name:      typeof s === "string" ? s : s.name,
+          region:    typeof s === "string" ? "" : (s.region    || ""),
+          direccion: typeof s === "string" ? "" : (s.direccion || ""),
+          emoji: ROLE_EMOJI[res.rol] || "🏪"
         })));
         setPhase("results");
       } else if (res.status === "blocked") {
@@ -810,10 +819,25 @@ function App() {
               <p className="section-sub">Selecciona el local donde quieres asistir hoy.</p>
 
               {myStores.length > 0 ? (
-                <div className="cards-grid">
-                  {myStores.map(store => (
-                    <StoreCard key={store.id} store={store} onSelect={setSelected} />
-                  ))}
+                <div className="regions-wrap">
+                  {(() => {
+                    const byRegion = {};
+                    myStores.forEach(s => {
+                      const r = s.region || "General";
+                      if (!byRegion[r]) byRegion[r] = [];
+                      byRegion[r].push(s);
+                    });
+                    return Object.entries(byRegion).map(([region, stores]) => (
+                      <div key={region} className="region-group">
+                        {region !== "General" && <div className="region-header">📍 {region}</div>}
+                        <div className="cards-grid">
+                          {stores.map(store => (
+                            <StoreCard key={store.id} store={store} onSelect={setSelected} />
+                          ))}
+                        </div>
+                      </div>
+                    ));
+                  })()}
                 </div>
               ) : (
                 <div className="empty">

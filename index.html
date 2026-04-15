@@ -736,7 +736,36 @@ function SkeletonGrid() {
 /* ══════════════════════════════════════════════════════════
    APP PRINCIPAL
    ══════════════════════════════════════════════════════════ */
+function ClosedScreen() {
+  const ahora = new Date();
+  const hora  = ahora.getHours();
+  // Calcular cuándo abre (7am del día siguiente si es >= 17, o 7am hoy si es madrugada)
+  const abre = new Date(ahora);
+  if (hora >= 17) { abre.setDate(abre.getDate() + 1); }
+  abre.setHours(7, 0, 0, 0);
+  const diff   = abre - ahora;
+  const horas  = Math.floor(diff / 3600000);
+  const minutos = Math.floor((diff % 3600000) / 60000);
+  return (
+    <div className="fullscreen-center">
+      <div className="status-card">
+        <div className="status-icon">🌙</div>
+        <div className="status-title">Registro cerrado</div>
+        <p className="status-text">
+          El registro está disponible de <strong>7:00 a 17:00 hrs</strong>.<br/><br/>
+          Vuelve mañana a las 7:00 AM.<br/>
+          <span style={{fontSize:"12px",color:"#94a3b8"}}>Abre en {horas}h {minutos}m aprox.</span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function App() {
+  // Verificar horario de atención (7:00 - 17:00)
+  const horaActual = new Date().getHours();
+  const fueraDHorario = horaActual >= 17 || horaActual < 7;
+
   // "phone" | "loading" | "results" | "already_registered" | "blocked" | "not_found" | "error"
   const [phase, setPhase]         = useState("phone");
   const [digits, setDigits]       = useState(""); // 8 dígitos ingresados
@@ -792,6 +821,13 @@ function App() {
     setUserInfo(null);
     setSelected(null);
   };
+
+  if (fueraDHorario) return (
+    <>
+      <Header userInfo={null} />
+      <ClosedScreen />
+    </>
+  );
 
   return (
     <>
